@@ -37,6 +37,8 @@ public class Day2(ITestOutputHelper toh)
         Assert.True(result > 500);
         Assert.NotEqual(602, Solve(File.ReadAllText("TestAssets/day2.txt"), SolutionDay2.SolvePt2));
         Assert.NotEqual(513, Solve(File.ReadAllText("TestAssets/day2.txt"), SolutionDay2.SolvePt2));
+        Assert.NotEqual(515, Solve(File.ReadAllText("TestAssets/day2.txt"), SolutionDay2.SolvePt2));
+        Assert.NotEqual(519, Solve(File.ReadAllText("TestAssets/day2.txt"), SolutionDay2.SolvePt2));
     }
 
     [Theory]
@@ -59,10 +61,53 @@ public class Day2(ITestOutputHelper toh)
     [InlineData(new int[] { 10, 12, 13, 33 })]
     [InlineData(new int[] { 10, 11, 50, 12, 13 })]
     [InlineData(new int[] { 11, 50, 12 })]
-
-    public void Foo(int[] arr)
+    [InlineData(new int[] { 8, 10, 9, 8 })]
+    [InlineData(new int[] { 9, 10, 33 })]
+    [InlineData(new int[] { 10, 8, 55, 7, 4 })]
+    [InlineData(new int[] { 10, 8, 7, 4, 55 })]
+    [InlineData(new int[] { 10, 55, 8, 7, 4 })]
+    [InlineData(new int[] { 55, 10, 8, 7, 4 })]
+    [InlineData(new int[] { 3, 10, 8, 7, 4 })]
+    [InlineData(new int[] { 1, 2, 3, 4, 5, 6 })]
+    [InlineData(new int[] { 1, 2, 3, 70, 4, 5, 6 })]
+    [InlineData(new int[] { -20, 1, 2, 3, 4, 5, 6 })]
+    [InlineData(new int[] { 1, 2, 3, 4, 5, 6, 20 })]
+    [InlineData(new int[] { 20, 1, 2, 3, 4, 5, 6 })]
+    [InlineData(new int[] { 1, 1, 2, 3, 4, 5, 6 })]
+    [InlineData(new int[] { 1, 2, 3, 4, 5, 5, 6 })]
+    [InlineData(new int[] { 1, 2, 3, 4, 5, 6, 6 })]
+    [InlineData(new int[] { 12, 10, 11, 14 })]
+    [InlineData(new int[] { 10, 11, 14 })]
+    [InlineData(new int[] { 10, 11, 14, 20 })]
+    [InlineData(new int[] { 1, 2, 3, 4, 5 })]
+    [InlineData(new int[] { 13, 1, 2, 3, 4, 5 })]
+    [InlineData(new int[] { 1, 13, 2, 3, 4, 5 })]
+    [InlineData(new int[] { 1, 2, 13, 3, 4, 5 })]
+    [InlineData(new int[] { 1, 2, 3, 13, 4, 5 })]
+    [InlineData(new int[] { 1, 2, 3, 4, 13, 5 })]
+    [InlineData(new int[] { 1, 2, 3, 4, 5, 13 })]
+    [InlineData(new int[] { -13, 1, 2, 3, 4, 5 })]
+    [InlineData(new int[] { 1, -13, 2, 3, 4, 5 })]
+    [InlineData(new int[] { 1, 2, -13, 3, 4, 5 })]
+    [InlineData(new int[] { 1, 2, 3, -13, 4, 5 })]
+    [InlineData(new int[] { 1, 2, 3, 4, -13, 5 })]
+    [InlineData(new int[] { 1, 2, 3, 4, 5, -13 })]
+    [InlineData(new int[] { 1, 2, 5, 8 })]
+    public void SomeTestCases(int[] arr)
     {
         Assert.True(SolutionDay2.IsLineOk(arr));
+    }
+
+    [Theory]
+    [InlineData(new int[] { 10, 20, 25 })]
+    [InlineData(new int[] { 10, 20, 11, 15 })]
+    [InlineData(new int[] { 1, 5, 6, 7, 6 })]
+    [InlineData(new int[] { 43, 43, 45, 46, 43, 44, 47, 46 })]
+    [InlineData(new int[] { 70, 74, 77, 78, 79, 84, 87 })]
+
+    public void SomeFailCases(int[] line)
+    {
+        Assert.False(SolutionDay2.IsLineOk(line));
     }
 
     private int Solve(string inputString, Func<int[][], int> solver)
@@ -116,10 +161,6 @@ static class SolutionDay2
             direction = GetDirection(line);
         }
 
-        if (direction == 0)
-        {
-            return IsLineOk(line.Where((x, idx) => idx != 0).ToArray(), null, depth + 1) || IsLineOk(line.Where((x, idx) => idx != 1).ToArray(), null, depth + 1);
-        }
 
         for (int i = 0; i < line.Length - 1; i++)
         {
@@ -130,26 +171,32 @@ static class SolutionDay2
             {
                 continue;
             }
-
-            var rest = line.Where((x, idx) => idx != i).ToArray();
-
-            var isOk = IsLineOk(rest, null, depth + 1);
-
-            if (!isOk && i == line.Length - 2)
+            if (i <= 1)
             {
-                return IsLineOk(line.Where((x, idx) => idx != line.Length - 1).ToArray(), null, depth + 1);
+                var isOk = IsLineOk(ExcludeElement(line, 0), null, depth + 1);
+                if (isOk)
+                {
+                    return true;
+                }
             }
 
-            return isOk;
+            return IsLineOk(ExcludeElement(line, i + 1), null, depth + 1);
         }
         return true;
     }
 
+
+
+    private static int[] ExcludeElement(int[] line, int index)
+    {
+        return line.Where((x, idx) => idx != index).ToArray();
+    }
+
     private static int GetDirection(int[] line)
     {
-        var first = line[1];
-        var second = line[0];
-        return first.CompareTo(second);
+        var first = line[0];
+        var second = line[1];
+        return second > first ? 1 : -1;
 
     }
 }
