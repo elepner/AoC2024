@@ -39,7 +39,7 @@ public class Day1
     public void RealSolutionPt2()
     {
         var input = File.ReadAllText("TestAssets/day1.txt");
-        Assert.Equal(1660292, Solve(input, Solution.SolvePt2));
+        Assert.Equal(22776016, Solve(input, Solution.SolvePt2));
     }
 
     private int Solve(string inputString, Func<int[][], int> solver)
