@@ -154,7 +154,7 @@ static class SolutionDay2
 
     }
 
-    public static bool IsLineOk(int[] line, int? direction = null, int depth = 0)
+    public static bool IsLineOk(int[] line, int startFrom = 0, int? direction = null, int depth = 0)
     {
         if (depth > 1)
         {
@@ -166,7 +166,7 @@ static class SolutionDay2
         }
 
 
-        for (int i = 0; i < line.Length - 1; i++)
+        for (int i = startFrom; i < line.Length - 1; i++)
         {
             int current = line[i];
             int next = line[i + 1];
@@ -177,14 +177,14 @@ static class SolutionDay2
             }
             if (i <= 1)
             {
-                var isOk = IsLineOk(ExcludeElement(line, 0), null, depth + 1) || IsLineOk(ExcludeElement(line, 1), null, depth + 1);
+                var isOk = IsLineOk(ExcludeElement(line, 0), 0, null, depth + 1) || IsLineOk(ExcludeElement(line, 1), 0, null, depth + 1);
                 if (isOk)
                 {
                     return true;
                 }
             }
 
-            return IsLineOk(ExcludeElement(line, i + 1), null, depth + 1);
+            return IsLineOk(ExcludeElement(line, i + 1), i, direction, depth + 1);
         }
         return true;
     }
