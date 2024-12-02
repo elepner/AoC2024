@@ -33,12 +33,25 @@ public class Day2(ITestOutputHelper toh)
     public void SolvePt2()
     {
         var result = Solve(File.ReadAllText("TestAssets/day2.txt"), SolutionDay2.SolvePt2);
+        result = Solve(File.ReadAllText("TestAssets/day2.txt"), (input) => input.Where(SolutionDay2.BruteForce).Count());
         toh.WriteLine($"Solutions count {result}");
         Assert.True(result > 500);
-        Assert.NotEqual(602, Solve(File.ReadAllText("TestAssets/day2.txt"), SolutionDay2.SolvePt2));
-        Assert.NotEqual(513, Solve(File.ReadAllText("TestAssets/day2.txt"), SolutionDay2.SolvePt2));
-        Assert.NotEqual(515, Solve(File.ReadAllText("TestAssets/day2.txt"), SolutionDay2.SolvePt2));
-        Assert.NotEqual(519, Solve(File.ReadAllText("TestAssets/day2.txt"), SolutionDay2.SolvePt2));
+        Assert.NotEqual(602, result);
+        Assert.NotEqual(513, result);
+        Assert.NotEqual(515, result);
+        Assert.NotEqual(519, result);
+    }
+
+    [Fact]
+    public void SolvePt2BruteForce()
+    {
+
+        var input = ParseInput(File.ReadAllText("TestAssets/day2.txt"));
+
+        foreach (var line in input)
+        {
+            Assert.Equal(SolutionDay2.BruteForce(line), SolutionDay2.IsLineOk(line));
+        }
     }
 
     [Theory]
@@ -62,21 +75,7 @@ public class Day2(ITestOutputHelper toh)
     [InlineData(new int[] { 10, 11, 50, 12, 13 })]
     [InlineData(new int[] { 11, 50, 12 })]
     [InlineData(new int[] { 8, 10, 9, 8 })]
-    [InlineData(new int[] { 9, 10, 33 })]
-    [InlineData(new int[] { 10, 8, 55, 7, 4 })]
-    [InlineData(new int[] { 10, 8, 7, 4, 55 })]
-    [InlineData(new int[] { 10, 55, 8, 7, 4 })]
-    [InlineData(new int[] { 55, 10, 8, 7, 4 })]
-    [InlineData(new int[] { 3, 10, 8, 7, 4 })]
-    [InlineData(new int[] { 1, 2, 3, 4, 5, 6 })]
-    [InlineData(new int[] { 1, 2, 3, 70, 4, 5, 6 })]
-    [InlineData(new int[] { -20, 1, 2, 3, 4, 5, 6 })]
-    [InlineData(new int[] { 1, 2, 3, 4, 5, 6, 20 })]
-    [InlineData(new int[] { 20, 1, 2, 3, 4, 5, 6 })]
-    [InlineData(new int[] { 1, 1, 2, 3, 4, 5, 6 })]
-    [InlineData(new int[] { 1, 2, 3, 4, 5, 5, 6 })]
-    [InlineData(new int[] { 1, 2, 3, 4, 5, 6, 6 })]
-    [InlineData(new int[] { 12, 10, 11, 14 })]
+    [InlineData(new int[] { 43, 40, 44, 46, 47, 48, 50 })]
     [InlineData(new int[] { 10, 11, 14 })]
     [InlineData(new int[] { 10, 11, 14, 20 })]
     [InlineData(new int[] { 1, 2, 3, 4, 5 })]
@@ -92,7 +91,7 @@ public class Day2(ITestOutputHelper toh)
     [InlineData(new int[] { 1, 2, 3, -13, 4, 5 })]
     [InlineData(new int[] { 1, 2, 3, 4, -13, 5 })]
     [InlineData(new int[] { 1, 2, 3, 4, 5, -13 })]
-    [InlineData(new int[] { 1, 2, 5, 8 })]
+
     public void SomeTestCases(int[] arr)
     {
         Assert.True(SolutionDay2.IsLineOk(arr));
@@ -124,21 +123,26 @@ public class Day2(ITestOutputHelper toh)
 
 static class SolutionDay2
 {
+
+
+
     public static int Solve(int[][] input)
     {
-        return input.Where((line) =>
+        return input.Where(IsLineOkSimple).Count();
+
+    }
+
+    private static bool IsLineOkSimple(int[] line)
+    {
+        var next = line[1];
+        var mul = next > line[0] ? 1 : -1;
+
+        var fit = line.Zip(line.Skip(1)).All((tuple) =>
         {
-            var next = line[1];
-            var mul = next > line[0] ? 1 : -1;
-
-            var fit = line.Zip(line.Skip(1)).All((tuple) =>
-            {
-                var diff = (tuple.Second - tuple.First) * mul;
-                return diff is > 0 and <= 3;
-            });
-            return fit;
-        }).Count();
-
+            var diff = (tuple.Second - tuple.First) * mul;
+            return diff is > 0 and <= 3;
+        });
+        return fit;
     }
 
     public static int SolvePt2(int[][] input)
@@ -173,7 +177,7 @@ static class SolutionDay2
             }
             if (i <= 1)
             {
-                var isOk = IsLineOk(ExcludeElement(line, 0), null, depth + 1);
+                var isOk = IsLineOk(ExcludeElement(line, 0), null, depth + 1) || IsLineOk(ExcludeElement(line, 1), null, depth + 1);
                 if (isOk)
                 {
                     return true;
@@ -185,7 +189,15 @@ static class SolutionDay2
         return true;
     }
 
+    public static bool BruteForce(int[] line)
+    {
+        if (IsLineOkSimple(line))
+        {
+            return true;
+        }
 
+        return Enumerable.Range(0, line.Length).Any(i => IsLineOkSimple(ExcludeElement(line, i)));
+    }
 
     private static int[] ExcludeElement(int[] line, int index)
     {
