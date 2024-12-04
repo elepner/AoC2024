@@ -18,11 +18,18 @@ public class Day4
                                      """;
 
     [Fact]
-    public void SolveSample()
+    public void SolveSamplePt1()
     {
         var result = ParseInput(Sample).SolvePt1();
         Assert.Equal(18, result);
 
+    }
+
+    [Fact]
+    public void SolveSamplePt2()
+    {
+        var result = ParseInput(Sample).SolvePt2();
+        Assert.Equal(9, result);
     }
 
     [Fact]
@@ -31,6 +38,15 @@ public class Day4
         var input = File.ReadAllText("TestAssets/day4.txt");
         var result = ParseInput(input).SolvePt1();
         Assert.Equal(2462, result);
+    }
+
+
+    [Fact]
+    public void SolvePt2()
+    {
+        var input = File.ReadAllText("TestAssets/day4.txt");
+        var result = ParseInput(input).SolvePt2();
+        Assert.Equal(1877, result);
     }
 
     private string[] ParseInput(string input)
@@ -42,6 +58,9 @@ public class Day4
 
 static class SolutionDay4
 {
+
+    private static readonly List<string> Patterns = new List<string>() { "MMSS", "SSMM", "MSMS", "SMSM" };
+    private static readonly List<(int, int)> Offsets = new List<(int, int)>() { (0, 0), (0, 1), (1, 0), (1, 1) }.Select(x => VScale(x, 2)).ToList();
     public static int SolvePt1(this string[] input)
     {
 
@@ -52,22 +71,30 @@ static class SolutionDay4
             count += CountXmas(str);
             count += CountXmas(ReverseString(str));
         }
-        // var (maxV, maxH) = GetDims(input);
-        // var count = 0;
-        // for (var i = 0; i < maxV; i++)
-        // {
-        //     for (var j = 0; j < maxH; j++)
-        //     {
-        //         if (input[i][j] == 'X')
-        //         {
-        //             var result = 0;
-        //             input.FindXmas([(i, j)], "MAS".AsSpan(), ref result);
-        //             count += result;
-        //         }
-        //     }
-        // }
-        // return EnumerateString(input).Aggregate(0, (acc, str) => acc + CountXmas(str.AsSpan()));
         return count;
+    }
+
+    public static int SolvePt2(this string[] input)
+    {
+
+        return Window(input).Count((corner) =>
+        {
+
+            var aLocation = VAdd(corner, (1, 1));
+            var center = input.GetValue(aLocation);
+            if (center != 'A')
+            {
+                return false;
+            }
+
+            var pattern = new string(Offsets.Select(offset => input.GetValue(VAdd(offset, corner))).ToArray());
+            if (Patterns.Contains(pattern))
+            {
+                return true;
+            }
+            return false;
+        });
+
     }
 
     public static IEnumerable<string> AllDirections(string[] input)
@@ -135,24 +162,14 @@ static class SolutionDay4
         }
     }
 
-    public static IEnumerable<(int, int)> GetDirections((int, int) current, string[] field)
+    private static IEnumerable<(int, int)> Window(string[] field)
     {
-        var (mavH, maxV) = field.GetDims();
-        int[] steps = [-1, 0, 1];
-        foreach (var dv in steps)
+        var (rows, cols) = GetDims(field);
+        for (var i = 0; i < rows - 2; i++)
         {
-            foreach (var dh in steps)
+            for (var j = 0; j < cols - 2; j++)
             {
-                if (dv == 0 && dh == 0)
-                {
-                    continue;
-                }
-                var nextV = current.Item1 + dv;
-                var nextH = current.Item2 + dh;
-                if (CheckBounds(nextV, maxV) && CheckBounds(nextH, mavH))
-                {
-                    yield return (nextV, nextH);
-                }
+                yield return (i, j);
             }
         }
     }
@@ -165,6 +182,21 @@ static class SolutionDay4
     public static (int, int) GetDims(this string[] field)
     {
         return (field.Length, field[0].Length);
+    }
+
+    private static (int, int) VAdd((int, int) a, (int, int) b)
+    {
+        return (a.Item1 + b.Item1, a.Item2 + b.Item2);
+    }
+
+    private static (int, int) VScale((int, int) a, int scale)
+    {
+        return (a.Item1 * scale, a.Item2 * scale);
+    }
+
+    private static char GetValue(this string[] field, (int, int) coords)
+    {
+        return field[coords.Item1][coords.Item2];
     }
 
     private static string ReverseString(string input)
@@ -193,26 +225,4 @@ static class SolutionDay4
         }
     }
 
-    private static void FindXmas(this string[] field, (int, int)[] path, ReadOnlySpan<char> pattern, ref int result)
-    {
-        if (pattern.Length == 0)
-        {
-            result++;
-            return;
-        }
-        var current = path.Last();
-        var toSearch = pattern[0];
-
-        var nextSteps = GetDirections(current, field).Where(direction => !path.Contains(direction)).ToArray();
-
-        foreach (var nextStep in nextSteps)
-        {
-            var nextChar = field[nextStep.Item1][nextStep.Item2];
-            if (nextChar == toSearch)
-            {
-                field.FindXmas([.. path, nextStep], pattern[1..], ref result);
-            }
-        }
-
-    }
 }
