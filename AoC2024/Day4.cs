@@ -25,19 +25,12 @@ public class Day4
 
     }
 
-
     [Fact]
-    public void Foo()
+    public void SolvePt1()
     {
-        var field = ParseInput("""
-        AAA
-        BBB
-        CCC
-        DDD
-        """);
-
-        var result = SolutionDay4.EnumerateDiagonal(field).ToArray();
-        var flipped = SolutionDay4.FlipDiagonals(result, SolutionDay4.GetDims(field)).ToArray();
+        var input = File.ReadAllText("TestAssets/day4.txt");
+        var result = ParseInput(input).SolvePt1();
+        Assert.Equal(2462, result);
     }
 
     private string[] ParseInput(string input)
