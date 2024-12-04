@@ -1,3 +1,4 @@
+using System.Diagnostics.Tracing;
 using Xunit;
 namespace AoC2024;
 
@@ -28,9 +29,15 @@ public class Day4
     [Fact]
     public void Foo()
     {
-        var field = ParseInput(Sample);
+        var field = ParseInput("""
+        AAA
+        BBB
+        CCC
+        DDD
+        """);
 
-        var result = SolutionDay4.GetDirections((0, 0), field).Where(x => x != (1, 1)).ToArray();
+        var result = SolutionDay4.EnumerateDiagonal(field).ToArray();
+        var flipped = SolutionDay4.FlipDiagonals(result, SolutionDay4.GetDims(field)).ToArray();
     }
 
     private string[] ParseInput(string input)
@@ -44,35 +51,95 @@ static class SolutionDay4
 {
     public static int SolvePt1(this string[] input)
     {
-        var (maxV, maxH) = GetDims(input);
+
+        var allStrings = AllDirections(input);
         var count = 0;
-        for (var i = 0; i < maxV; i++)
+        foreach (var str in allStrings)
         {
-            for (var j = 0; j < maxH; j++)
-            {
-                if (input[i][j] == 'X')
-                {
-                    var result = 0;
-                    input.FindXmas([(i, j)], "MAS".AsSpan(), ref result);
-                    count += result;
-                }
-            }
+            count += CountXmas(str);
+            count += CountXmas(ReverseString(str));
         }
+        // var (maxV, maxH) = GetDims(input);
+        // var count = 0;
+        // for (var i = 0; i < maxV; i++)
+        // {
+        //     for (var j = 0; j < maxH; j++)
+        //     {
+        //         if (input[i][j] == 'X')
+        //         {
+        //             var result = 0;
+        //             input.FindXmas([(i, j)], "MAS".AsSpan(), ref result);
+        //             count += result;
+        //         }
+        //     }
+        // }
         // return EnumerateString(input).Aggregate(0, (acc, str) => acc + CountXmas(str.AsSpan()));
         return count;
     }
 
-    private static bool FindChar(this string[] field, (int, int) current, char c, out (int, int) next)
+    public static IEnumerable<string> AllDirections(string[] input)
     {
+        var (rows, cols) = GetDims(input);
+        foreach (var str in input)
+        {
+            yield return str;
+        }
 
-        var dirs = GetDirections(current, field).ToArray();
-        var result = GetDirections(current, field)
-        .Select(direction => new { c = field[direction.Item1][direction.Item2], coords = direction })
-        .FirstOrDefault(obj => obj.c == c);
+        for (var i = 0; i < cols; i++)
+        {
+            yield return new string(input.Select(x => x[i]).ToArray());
+        }
 
-        next = result?.coords ?? (0, 0);
+        var diags = EnumerateDiagonal(input).ToArray();
+        var flipped = FlipDiagonals(diags, (rows, cols));
 
-        return result != null;
+        var diagLines = diags.Concat(flipped).Select((diag) => diag.Select(coords => input[coords.Item1][coords.Item2]).ToArray()).Select(x => new string(x));
+
+        foreach (var diag in diagLines)
+        {
+            yield return diag;
+        }
+    }
+
+    public static IEnumerable<List<(int, int)>> FlipDiagonals(IEnumerable<List<(int, int)>> input, (int, int) dims)
+    {
+        var (rows, cols) = dims;
+        foreach (var diag in input)
+        {
+            var result = new List<(int, int)>(diag.Count);
+            foreach (var (row, col) in diag)
+            {
+                result.Add((row, cols - col - 1));
+            }
+
+            yield return result;
+        }
+    }
+
+    public static IEnumerable<List<(int, int)>> EnumerateDiagonal(this string[] field)
+    {
+        var (rows, cols) = GetDims(field);
+
+        for (int startRow = 0; startRow < rows; startRow++)
+        {
+            List<(int, int)> diagonal = new();
+            for (int r = startRow, c = 0; r < rows && c < cols; r++, c++)
+            {
+                diagonal.Add((r, c));
+            }
+            yield return diagonal;
+        }
+
+        // Iterate over diagonals starting from each column of the first row (except [0,0])
+        for (int startCol = 1; startCol < cols; startCol++)
+        {
+            List<(int, int)> diagonal = new();
+            for (int r = 0, c = startCol; r < rows && c < cols; r++, c++)
+            {
+                diagonal.Add((r, c));
+            }
+            yield return diagonal;
+        }
     }
 
     public static IEnumerable<(int, int)> GetDirections((int, int) current, string[] field)
@@ -102,11 +169,36 @@ static class SolutionDay4
         return 0 <= val && val < max;
     }
 
-    private static (int, int) GetDims(this string[] field)
+    public static (int, int) GetDims(this string[] field)
     {
         return (field.Length, field[0].Length);
     }
 
+    private static string ReverseString(string input)
+    {
+        char[] charArray = input.ToCharArray();
+        Array.Reverse(charArray);
+        string reversed = new string(charArray);
+
+        return reversed;
+    }
+
+    private static int CountXmas(string input)
+    {
+        var xmas = "XMAS";
+        var span = input.AsSpan();
+        var count = 0;
+        while (true)
+        {
+            var idx = span.IndexOf(xmas);
+            if (idx < 0)
+            {
+                return count;
+            }
+            count++;
+            span = span.Slice(idx + xmas.Length);
+        }
+    }
 
     private static void FindXmas(this string[] field, (int, int)[] path, ReadOnlySpan<char> pattern, ref int result)
     {
