@@ -202,31 +202,28 @@ static class SolutionDay5
 
         if (remaining.Length == 0)
         {
-            if (IsOk(currentPath, index))
-            {
-                return currentPath;
-            }
+            return currentPath;
 
-            throw new ArgumentException($"Found path {string.Join(",", currentPath)}, but it's not ok");
+            // throw new ArgumentException($"Found path {string.Join(",", currentPath)}, but it's not ok");
         }
 
-        var forward = (GetOptions(node.Out), true);
-        var backward = (GetOptions(node.In), false);
-
-        var options = isForward ? forward : backward;
+        var options = isForward ? GetOptions(node.Out): GetOptions(node.In);
 
         Node<int>[] GetOptions(IReadOnlyDictionary<int, Node<int>> nodes)
         {
-            return nodes.Where(x => remaining.Contains(x.Key)).Select(x => x.Value).ToArray();
+#pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
+            return remaining.Select(id => nodes.TryGetValue(id, out var value) ? value : null).Where(x => x != null).ToArray();
+#pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
+
         }
 
-        if (isForward && options.Item1.Length == 0)
+        if (isForward && options.Length == 0)
         {
             return Fix(seq, false, currentPath, index);
         }
 
 
-        foreach (var option in options.Item1)
+        foreach (var option in options)
         {
             var newPath = isForward
                 ? currentPath.Append(option.Id).ToArray()
