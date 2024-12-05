@@ -125,7 +125,7 @@ public class Day5(ITestOutputHelper toh)
         foreach (var el in broken)
         {
             Debug.WriteLine($"Fixing sequence {string.Join(",", el)}");
-            var fix = SolutionDay5.Fix(el, index);
+            var fix = SolutionDay5.FixSorted(el, index);
             Debug.WriteLine($"Fixed sequence {string.Join(",", fix)}");
             Assert.True(SolutionDay5.IsOk(fix, index));
         }
@@ -160,7 +160,7 @@ static class SolutionDay5
 
     public static int SolvePt2(int[][] seqs, Dictionary<int, Node<int>> index, Action<string>? log = null)
     {
-        return seqs.Where(seq => !IsOk(seq, index, log)).AsParallel().Select(seq => Fix(seq, index)).Select(x => x[x.Length / 2]).Aggregate(0, (acc, curr) => acc + curr);
+        return seqs.Where(seq => !IsOk(seq, index, log)).AsParallel().Select(seq => FixSorted(seq, index)).Select(x => x[x.Length / 2]).Aggregate(0, (acc, curr) => acc + curr);
     }
 
     public static bool IsOk(int[] seq, Dictionary<int, Node<int>> index, Action<string>? log = null)
@@ -189,10 +189,20 @@ static class SolutionDay5
 
     public static int[] Fix(int[] seq, Dictionary<int, Node<int>> index)
     {
-        return Fix(seq, true, new[] { seq[0] }, index);
+        // return Fix(seq, true, new[] { seq[0] }, index);
+        return FixSorted(seq, index);
     }
 
-    public static int[]? Fix(int[] seq, bool isForward, int[] currentPath, Dictionary<int, Node<int>> index)
+    public static int[] FixSorted(int[] seq, Dictionary<int, Node<int>> index)
+    {
+        var copy = new int[seq.Length];
+        Array.Copy(seq, copy, copy.Length);
+
+        Array.Sort(copy, new Comparer(index));
+
+        return copy;
+    }
+    private static int[]? Fix(int[] seq, bool isForward, int[] currentPath, Dictionary<int, Node<int>> index)
     {
         var current = isForward ? currentPath[^1] : currentPath[0];
 
@@ -269,7 +279,36 @@ static class SolutionDay5
 }
 
 
+class Comparer : IComparer<int>
+{
+    private readonly Dictionary<int, Node<int>> _index;
 
+    public Comparer(Dictionary<int, Node<int>> index)
+    {
+        _index = index;
+    }
+    public int Compare(int x, int y)
+    {
+        var el = _index[x];
+
+        if (x == y)
+        {
+            return 0;
+        }
+
+        if (el.Out.ContainsKey(y))
+        {
+            return -1;
+        }
+
+        if (el.In.ContainsKey(y))
+        {
+            return 1;
+        }
+
+        throw new ArgumentException($"value {y} is not connected to {x}");
+    }
+}
 
 class Node<TId> where TId : notnull
 {
