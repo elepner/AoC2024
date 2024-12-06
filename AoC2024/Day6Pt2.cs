@@ -5,11 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using OneOf;
 using Xunit;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace AoC2024Pt1;
 
-public class Day6
+namespace AoC2024;
+using Cell = OneOf.OneOf<CellType, VisitedCell>;
+public class Day6Pt2
 {
     private readonly string Sample = """
                                      ....#.....
@@ -29,15 +29,15 @@ public class Day6
     {
         var state = Parse(Sample);
         var result = SolutionDay6.Solve(state);
-        Assert.Equal(41, result);
+        Assert.Equal(6, result);
     }
 
     [Fact]
-    public void ShouldSolvePt1()
+    public void ShouldSolveBruteForcePt1()
     {
         var state = Parse(File.ReadAllText("TestAssets/day6.txt"));
         var result = SolutionDay6.Solve(state);
-        Assert.Equal(5131, result);
+        Assert.Equal(1784, result);
     }
 
     static State Parse(string input)
@@ -55,7 +55,9 @@ public class Day6
 
         var rows = lines.Length;
         var cols = lines[0].Length;
-        CellType[,] field = new CellType[rows, cols];
+        Cell[,] field = new Cell[rows, cols];
+
+
         for (int i = 0; i < rows; i++)
         {
             for (int j = 0; j < cols; j++)
@@ -74,7 +76,7 @@ public class Day6
                     }
 
                     guardInfo = new GuardInfo((row, col), direction);
-                    field[row, col] = CellType.VisitedCell;
+                    field[row, col] = new VisitedCell(0);
                 });
             }
         }
@@ -98,35 +100,94 @@ static class SolutionDay6
         }
 
         var cellTypeInFrontOfGuard = state.Field.GetCell(cellInFrontOfGuard);
-        
-        
-        if (cellTypeInFrontOfGuard == CellType.Obstacle)
+
+        return cellTypeInFrontOfGuard.Match((cell) =>
         {
-            return state with { Guard = state.Guard with { Direction = (Direction)(((int)state.Guard.Direction + 1) % 4) } };
+            if (cell == CellType.Obstacle)
+            {
+                return state with { Guard = state.Guard with { Direction = (Direction)(((int)state.Guard.Direction + 1) % 4) } };
+            }
+            state.Field[cellInFrontOfGuard.Item1, cellInFrontOfGuard.Item2] = VisitedCell.FromDirection(state.Guard.Direction);
+            return state with { Guard = state.Guard with { Location = cellInFrontOfGuard } };
+        }, (visitedCell) =>
+        {
+            if (visitedCell.VisitedFromGivenDirection(state.Guard.Direction))
+            {
+                throw new CycleFoundException();
+            }
+            state.Field[cellInFrontOfGuard.Item1, cellInFrontOfGuard.Item2] = visitedCell.AddDirection(state.Guard.Direction);
+            return state with { Guard = state.Guard with { Location = cellInFrontOfGuard } };
+        });
+
+        // return state with { Guard = state.Guard with { Location = cellInFrontOfGuard } };
+    }
+
+    private static bool IsCycled(State state)
+    {
+        State? s = state;
+        while (s != null)
+        {
+            try
+            {
+                s = MakeStep(s);
+            }
+            catch (CycleFoundException)
+            {
+                return true;
+            }
+            
         }
-        state.Field[cellInFrontOfGuard.Item1, cellInFrontOfGuard.Item2] = CellType.VisitedCell;
-        return state with { Guard = state.Guard with { Location = cellInFrontOfGuard } };
+
+        return false;
     }
 
     public static int Solve(State state)
     {
         State? s = state;
-        while (s != null)
-        {
-            s = MakeStep(s);
-        }
 
+        var field = state.Field;
         var count = 0;
-        foreach (var cellType in state.Field)
-        {
-            if (cellType == CellType.VisitedCell)
-            {
-                count++;
-            }
 
+        for (int i = 0; i < field.GetLength(0); i++)
+        {
+            for (int j = 0; j < field.GetLength(1); j++)
+            {
+                var cellType = field[i, j];
+                if (cellType is not { IsT0: true, AsT0: CellType.Cell }) continue;
+
+                var cp = Copy(field);
+                cp[i, j] = CellType.Obstacle;
+                if (IsCycled(state with { Field = cp }))
+                {
+                    count++;
+                }
+            }
         }
+
+        //foreach (var cellType in state.Field)
+        //{
+        //    if (cellType == CellType.VisitedCell)
+        //    {
+        //        count++;
+        //    }
+
+        //}
 
         return count;
+    }
+
+    private static Cell[,] Copy(Cell[,] field)
+    {
+        var result = new Cell[field.GetLength(0), field.GetLength(1)];
+
+        for (int i = 0; i < field.GetLength(0); i++)
+        {
+            for (int j = 0; j < field.GetLength(1); j++)
+            {
+                result[i, j] = field[i, j];
+            }
+        }
+        return result;
     }
 
     private static (int, int) GetVector(Direction direction)
@@ -147,11 +208,9 @@ static class SolutionDay6
         return (v1.Item1 + v2.Item1, v1.Item2 + v2.Item2);
     }
 
-    private static CellType GetCell(this CellType[,] field, (int, int) v)
+    private static Cell GetCell(this Cell[,] field, (int, int) v)
     {
-
         return field[v.Item1, v.Item2];
-
     }
 
     private static bool CheckBounds(int val, int max)
@@ -161,15 +220,39 @@ static class SolutionDay6
 
 }
 
-record State(CellType[,] Field, GuardInfo Guard);
+class CycleFoundException : Exception
+{
+
+}
+
+record State(Cell[,] Field, GuardInfo Guard);
 
 enum CellType
 {
     Obstacle,
-    Cell,
-    VisitedCell
+    Cell
 }
 
+
+record struct VisitedCell(byte VisitedFrom)
+{
+    public static VisitedCell FromDirection(Direction direction)
+    {
+        return new VisitedCell((byte)(1 << (byte)direction));
+    }
+
+    public bool VisitedFromGivenDirection(Direction direction)
+    {
+        var mask = (byte)(1 << (byte)direction);
+        return (VisitedFrom & mask) != 0;
+    }
+
+    public VisitedCell AddDirection(Direction direction)
+    {
+        var mask = (byte)(1 << (byte)direction);
+        return new VisitedCell((byte)(mask | VisitedFrom));
+    }
+}
 record GuardInfo((int, int) Location, Direction Direction);
 
 enum Direction
