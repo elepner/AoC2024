@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -146,12 +147,25 @@ static class SolutionDay6
         State? s = state;
 
         var field = state.Field;
+
+
+        var initial = Copy(field);
+
+        if (IsCycled(state with { Field = initial }))
+        {
+            throw new ArgumentException("Initial should not be cycled");
+        }
+
+
+
         var count = 0;
 
-        for (int i = 0; i < field.GetLength(0); i++)
+        Parallel.For(0, field.GetLength(0), (i) =>
         {
             for (int j = 0; j < field.GetLength(1); j++)
             {
+                if (!initial[i, j].IsT1) continue;
+
                 var cellType = field[i, j];
                 if (cellType is not { IsT0: true, AsT0: CellType.Cell }) continue;
 
@@ -159,19 +173,10 @@ static class SolutionDay6
                 cp[i, j] = CellType.Obstacle;
                 if (IsCycled(state with { Field = cp }))
                 {
-                    count++;
+                    Interlocked.Increment(ref count);
                 }
             }
-        }
-
-        //foreach (var cellType in state.Field)
-        //{
-        //    if (cellType == CellType.VisitedCell)
-        //    {
-        //        count++;
-        //    }
-
-        //}
+        });
 
         return count;
     }
