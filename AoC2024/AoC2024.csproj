@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.7" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.1" />
+    <PackageReference Include="OneOf" Version="3.0.271" />
     <PackageReference Include="Testcontainers" Version="3.10.0" />
     <PackageReference Include="Testcontainers.Azurite" Version="3.10.0" />
     <PackageReference Include="Testcontainers.MsSql" Version="3.10.0" />
@@ -34,6 +35,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestAssets\day5.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestAssets\day6.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
