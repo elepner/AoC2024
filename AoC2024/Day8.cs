@@ -31,8 +31,8 @@ public class Day8(ITestOutputHelper toh)
     [Fact]
     public void ShouldSolveSamplePt2()
     {
-        var result = SolutionDay8.SolvePt2(ParseInput(Sample), (s) => toh.WriteLine(s));
-        //Assert.Equal(34, result);
+        var result = SolutionDay8.SolvePt2(ParseInput(Sample), log: (s) => toh.WriteLine(s));
+
     }
 
 
@@ -51,7 +51,7 @@ public class Day8(ITestOutputHelper toh)
         ..........
         ..........
         """;
-        var result = SolutionDay8.SolvePt2(ParseInput(str), (s) => toh.WriteLine(s));
+        var result = SolutionDay8.SolvePt2(ParseInput(str), log: (s) => toh.WriteLine(s));
         Assert.Equal(9, result);
     }
 
@@ -90,53 +90,12 @@ public class Day8(ITestOutputHelper toh)
 
 static class SolutionDay8
 {
-    public static int SolvePt1(Cell?[][] field, Action<string>? writeLine = null)
+    public static int SolvePt1(Cell?[][] field, Action<string>? log = null)
     {
-        var groups = field.EnumerateCoords().Select(x => field.GetFieldValue(x)).Where(x => x.Value != null).GroupBy(x => x.Value).ToArray();
-
-
-        foreach (var gr in groups)
-        {
-            foreach (var (el1, el2) in gr.ToArray().AllCombinations())
-            {
-                var delta = el2.Coordinates.Sub(el1.Coordinates);
-                Assert.True(delta.Item1 >= 0);
-
-                (int, (int, int))[] els = [(-1, el1.Coordinates), (1, el2.Coordinates)];
-
-                foreach (var (scale, coords) in els)
-                {
-                    var target = coords.Add(delta.Scale(scale));
-                    if (field.CheckBounds(target))
-                    {
-                        var value = field.GetVal(target);
-                        field.SetVal(target, value.PlaceAntinode());
-                    }
-                }
-            }
-        }
-
-        if (writeLine != null)
-        {
-            var lines = field.Select(line => line.Select((x) =>
-                    {
-                        if (x == null)
-                        {
-                            return ".";
-                        }
-                        return x.Value.Match(x => x.ToString(), y => y.ToString());
-                    })).Select(line => string.Join("", line));
-
-            foreach (var line in lines)
-            {
-                writeLine.Invoke(line);
-            }
-        }
-
-        return field.EnumerateCoords().Select(x => field.GetVal(x)).Count(val => val != null && (val.Value.IsT1 || val.Value.AsT0.HasAntinode));
+        return SolvePt2(field, 1, 2, log);
     }
 
-    public static int SolvePt2(Cell?[][] field, Action<string>? writeLine = null)
+    public static int SolvePt2(Cell?[][] field, int scanFrom = 0, int scanTo = int.MaxValue, Action<string>? log = null)
     {
         var groups = field.EnumerateCoords().Select(x => field.GetFieldValue(x)).Where(x => x.Value != null).GroupBy(x => x.Value).ToArray();
 
@@ -154,7 +113,7 @@ static class SolutionDay8
                 {
                     var d = delta.Scale(scale);
 
-                    for (int i = 0; ; i++)
+                    for (int i = scanFrom; i < scanTo; i++)
                     {
                         var target = coords.Add(d.Scale(i));
                         if (!field.CheckBounds(target))
@@ -167,8 +126,8 @@ static class SolutionDay8
                 }
             }
         }
-        if (writeLine != null)
-            Print(field, writeLine);
+        if (log != null)
+            Print(field, log);
 
         return field.EnumerateCoords().Select(x => field.GetVal(x)).Count(val => val != null && (val.Value.IsT1 || val.Value.AsT0.HasAntinode));
     }
