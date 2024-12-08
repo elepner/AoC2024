@@ -66,42 +66,67 @@ static class SolutionDay8
                     if (field.CheckBounds(target))
                     {
                         var value = field.GetVal(target);
-                        if (value == null)
-                        {
-                            field.SetVal(target, new Antinode());
-                        }
+                        field.SetVal(target, value.PlaceAntinode());
                     }
                 }
             }
         }
 
-        var lines = field.Select(line => line.Select((x) =>
+        if (writeLine != null)
         {
-            if (x == null)
+            var lines = field.Select(line => line.Select((x) =>
+                    {
+                        if (x == null)
+                        {
+                            return ".";
+                        }
+                        return x.Value.Match(x => x.ToString(), y => y.ToString());
+                    })).Select(line => string.Join("", line));
+
+            foreach (var line in lines)
             {
-                return ".";
+                writeLine.Invoke(line);
             }
-            return x.Value.Match(x => x.ToString(), y => y.ToString());
-        })).Select(line => string.Join("", line));
-
-        foreach (var line in lines)
-        {
-            writeLine?.Invoke(line);
         }
-        return field.EnumerateCoords().Select(x => field.GetVal(x)).Count(val => val != null && val.Value.IsT1);
+
+        return field.EnumerateCoords().Select(x => field.GetVal(x)).Count(val => val != null && (val.Value.IsT1 || val.Value.AsT0.HasAntinode));
     }
 
-    private static (int, int) GetDims<T>(this T[][] filed)
+    private static Cell PlaceAntinode(this Cell? cell)
     {
-        return (filed.Length, filed[0].Length);
+        if (cell == null)
+        {
+            return new Antinode();
+        }
+        return cell.Value.Match(antenna =>
+        {
+            return Cell.FromT0(antenna.AttachAntinode());
+        }, antinode =>
+        {
+            return antinode;
+        });
     }
+
 }
 
-record Antenna(char Type)
+record Antenna(char Type, bool HasAntinode = false)
 {
     public override string ToString()
     {
+        if (HasAntinode && Type == 'A')
+        {
+            return "Ą";
+        }
         return Type.ToString();
+    }
+
+    public Antenna AttachAntinode()
+    {
+        if (HasAntinode)
+        {
+            return this;
+        }
+        return this with { HasAntinode = true };
     }
 };
 record Antinode()
