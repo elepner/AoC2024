@@ -28,6 +28,18 @@ public class Day8(ITestOutputHelper toh)
         Assert.Equal(14, result);
     }
 
+    [Fact]
+    public void ShouldSolveTask()
+    {
+        var str = File.ReadAllText("TestAssets/day8.txt");
+
+        var result = SolutionDay8.SolvePt1(ParseInput(str));
+
+        Assert.True(result < 16896);
+
+        toh.WriteLine(result.ToString());
+    }
+
     static Cell?[][] ParseInput(string input)
     {
         var result = input.Split(Environment.NewLine).Select(s => s.Select(c =>
