@@ -68,6 +68,7 @@ class SolutionDay7
 {
     private static long FuncOperator(Operator op, long a, long b)
     {
+
         return op switch
         {
             Operator.Plus => a + b,
