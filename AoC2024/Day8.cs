@@ -22,23 +22,55 @@ public class Day8(ITestOutputHelper toh)
                                             """;
 
     [Fact]
-    public void ShouldSolveSample()
+    public void ShouldSolveSamplePt1()
     {
         var result = SolutionDay8.SolvePt1(ParseInput(Sample), (s) => toh.WriteLine(s));
         Assert.Equal(14, result);
     }
 
     [Fact]
-    public void ShouldSolveTask()
+    public void ShouldSolveSamplePt2()
+    {
+        var result = SolutionDay8.SolvePt2(ParseInput(Sample), (s) => toh.WriteLine(s));
+        //Assert.Equal(34, result);
+    }
+
+
+    [Fact]
+    public void ShouldSolveSamplePt2_1()
+    {
+        var str = """
+        T.........
+        ...T......
+        .T........
+        ..........
+        ..........
+        ..........
+        ..........
+        ..........
+        ..........
+        ..........
+        """;
+        var result = SolutionDay8.SolvePt2(ParseInput(str), (s) => toh.WriteLine(s));
+        Assert.Equal(9, result);
+    }
+
+    [Fact]
+    public void ShouldSolveTaskPt1()
     {
         var str = File.ReadAllText("TestAssets/day8.txt");
-
         var result = SolutionDay8.SolvePt1(ParseInput(str));
-
-        Assert.True(result < 16896);
-
-        toh.WriteLine(result.ToString());
+        Assert.Equal(308, result);
     }
+
+    [Fact]
+    public void ShouldSolveTaskPt2()
+    {
+        var str = File.ReadAllText("TestAssets/day8.txt");
+        var result = SolutionDay8.SolvePt2(ParseInput(str));
+        Assert.Equal(1147, result);
+    }
+
 
     static Cell?[][] ParseInput(string input)
     {
@@ -104,6 +136,62 @@ static class SolutionDay8
         return field.EnumerateCoords().Select(x => field.GetVal(x)).Count(val => val != null && (val.Value.IsT1 || val.Value.AsT0.HasAntinode));
     }
 
+    public static int SolvePt2(Cell?[][] field, Action<string>? writeLine = null)
+    {
+        var groups = field.EnumerateCoords().Select(x => field.GetFieldValue(x)).Where(x => x.Value != null).GroupBy(x => x.Value).ToArray();
+
+
+        foreach (var gr in groups)
+        {
+            foreach (var (el1, el2) in gr.ToArray().AllCombinations())
+            {
+                var delta = el2.Coordinates.Sub(el1.Coordinates);
+                Assert.True(delta.Item1 >= 0);
+
+                (int, (int, int))[] els = [(-1, el1.Coordinates), (1, el2.Coordinates)];
+
+                foreach (var (scale, coords) in els)
+                {
+                    var d = delta.Scale(scale);
+
+                    for (int i = 0; ; i++)
+                    {
+                        var target = coords.Add(d.Scale(i));
+                        if (!field.CheckBounds(target))
+                        {
+                            break;
+                        }
+                        field.SetVal(target, field.GetVal(target).PlaceAntinode());
+                    }
+
+                }
+            }
+        }
+        if (writeLine != null)
+            Print(field, writeLine);
+
+        return field.EnumerateCoords().Select(x => field.GetVal(x)).Count(val => val != null && (val.Value.IsT1 || val.Value.AsT0.HasAntinode));
+    }
+
+    private static void Print(Cell?[][] field, Action<string> writeLine)
+    {
+
+        var lines = field.Select(line => line.Select((x) =>
+                {
+                    if (x == null)
+                    {
+                        return ".";
+                    }
+                    return x.Value.Match(x => x.ToString(), y => y.ToString());
+                })).Select(line => string.Join("", line));
+
+        foreach (var line in lines)
+        {
+            writeLine.Invoke(line);
+        }
+
+    }
+
     private static Cell PlaceAntinode(this Cell? cell)
     {
         if (cell == null)
@@ -125,9 +213,14 @@ record Antenna(char Type, bool HasAntinode = false)
 {
     public override string ToString()
     {
-        if (HasAntinode && Type == 'A')
+        if (HasAntinode)
         {
-            return "Ą";
+            if (Type == 'A')
+                return "Ą";
+            if (Type == '0')
+            {
+                return "Ó";
+            }
         }
         return Type.ToString();
     }
