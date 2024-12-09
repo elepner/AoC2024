@@ -84,7 +84,7 @@ public class Day9(ITestOutputHelper toh)
         var input = ParseInput2(File.ReadAllText("TestAssets/day9.txt"));
         var result = SolutionDay9.SolvePt2(input);
 
-        Assert.True(result > 6390741161030);
+        Assert.Equal(6390781891880, result);
     }
 
     public List<DiskEntry> ParseInput2(string input)
@@ -202,23 +202,28 @@ public static class SolutionDay9
             var hole = input[holeIdx].AsT0;
             var remainingSize = hole.Size - file.Size;
 
-            input[tryingToMoveIdx] = new Hole(file.Size);
-            MergeHoles(input, tryingToMoveIdx);
+            //input[tryingToMoveIdx] = new Hole(file.Size);
+            //MergeHoles(input, tryingToMoveIdx);
 
+            //input[holeIdx] = file;
+
+            
+
+            input[tryingToMoveIdx] = new Hole(file.Size);
             input[holeIdx] = file;
 
             if (remainingSize > 0)
             {
                 input.Insert(holeIdx + 1, new Hole(remainingSize));
-                MergeHoles(input, holeIdx + 1);
             }
 
-            //input[tryingToMoveIdx] = new Hole(file.Size);
-            //input[holeIdx] = file;
-
-
-            //MergeHoles(input, remainingSize > 0 ? tryingToMoveIdx + 1 : tryingToMoveIdx);
-            //MergeHoles(input, remainingSize > 0 ? holeIdx + 1 : holeIdx);
+            
+            MergeHoles(input, remainingSize > 0 ? tryingToMoveIdx + 1 : tryingToMoveIdx);
+            if (remainingSize > 0)
+            {
+                MergeHoles(input, holeIdx + 1);
+            }
+            
 
 
             if (log != null)
