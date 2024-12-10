@@ -86,8 +86,6 @@ static class SolutionDy10
     public static int Bfs(MapHeight[][] field, (int, int) start)
     {
         var value = field.GetVal(start);
-
-
         var front = new HashSet<(int, int)>()
         {
             start
@@ -103,14 +101,9 @@ static class SolutionDy10
                 visited.Add(el);
                 var currentCell = el.GetFieldValue(field);
 
-                var canGoTo = CollectionExtension
-                    .AllDirections()
-                    .Select(x => x.GetVector())
-                    .Select(v => v.Add(el))
-                    .Where(x => field.CheckBounds(x)
-                            && field.GetVal(x).Height == currentCell.Value.Height + 1
-                            && !front.Contains(x)
-                            && !visited.Contains(x)).ToArray();
+                var canGoTo = field.GetCanGoTo(el).Where(x => !front.Contains(x)
+                                                            && !visited.Contains(x));
+
                 foreach (var canGo in canGoTo)
                 {
                     front.Add(canGo);
@@ -132,16 +125,22 @@ static class SolutionDy10
             return;
         }
 
-        var canGoTo = CollectionExtension
-            .AllDirections()
-            .Select(x => x.GetVector())
-            .Select(v => v.Add(current))
-            .Where(x => field.CheckBounds(x) && field.GetVal(x).Height == value.Height + 1);
+        var canGoTo = field.GetCanGoTo(current);
 
         foreach (var next in canGoTo)
         {
             Dfs(field, next, ref finishCount);
         }
+    }
+
+    private static IEnumerable<(int, int)> GetCanGoTo(this MapHeight[][] field, (int, int) point)
+    {
+        var value = field.GetVal(point);
+        return CollectionExtension
+            .AllDirections()
+            .Select(x => x.GetVector())
+            .Select(v => v.Add(point))
+            .Where(x => field.CheckBounds(x) && field.GetVal(x).Height == value.Height + 1);
     }
 }
 
