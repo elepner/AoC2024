@@ -136,7 +136,7 @@ static class SolutionDay6
             {
                 return true;
             }
-            
+
         }
 
         return false;
@@ -259,11 +259,3 @@ record struct VisitedCell(byte VisitedFrom)
     }
 }
 record GuardInfo((int, int) Location, Direction Direction);
-
-enum Direction
-{
-    N = 0,
-    E = 1,
-    S = 2,
-    W = 3
-}

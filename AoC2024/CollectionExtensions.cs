@@ -2,6 +2,7 @@ namespace AoC2024;
 
 public static class CollectionExtension
 {
+
     public static IEnumerable<(int, int)> EnumerateCoords<T>(this T[][] field)
     {
         var (rows, cols) = field.GetDims();
@@ -44,6 +45,11 @@ public static class CollectionExtension
         return new FieldValue<T>(coords, field[coords.Item1][coords.Item2]);
     }
 
+    public static FieldValue<T> GetFieldValue<T>(this (int, int) coords, T[][] field)
+    {
+        return new FieldValue<T>(coords, field[coords.Item1][coords.Item2]);
+    }
+
     public static IEnumerable<(T, T)> Pairwise<T>(IEnumerable<T> col)
     {
         return col.Zip(col.Skip(1));
@@ -59,6 +65,33 @@ public static class CollectionExtension
             }
         }
     }
+
+
+    public static (int, int) GetVector(this Direction direction)
+    {
+
+        return direction switch
+        {
+            Direction.N => (-1, 0),
+            Direction.S => (1, 0),
+            Direction.E => (0, 1),
+            Direction.W => (0, -1),
+            _ => throw new ArgumentException()
+        };
+    }
+
+    public static Direction[] AllDirections()
+    {
+        return Enumerable.Range(0, 4).Select(x => (Direction)x).ToArray();
+    }
+}
+
+public enum Direction
+{
+    N = 0,
+    E = 1,
+    S = 2,
+    W = 3
 
 }
 

@@ -46,6 +46,7 @@
     <None Update="TestAssets\day8.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+
   </ItemGroup>
 
 </Project>
