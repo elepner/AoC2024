@@ -1,8 +1,7 @@
 using System.Diagnostics;
-using AoC2024;
 using Xunit;
 
-namespace AoC2024D10;
+namespace AoC2024;
 
 public class Day10
 {
@@ -24,10 +23,13 @@ public class Day10
         Assert.Equal(36, result);
     }
 
-    public void ShouldSolvePt1()[
+    [Fact]
+    public void ShouldSolvePt1()
+    {
+        var field = ParseInput(File.ReadAllText("TestAssets/day10.txt"));
+        var result = SolutionDy10.Solve(field);
 
-
-    ]
+    }
 
     private static MapHeight[][] ParseInput(string input)
     {
