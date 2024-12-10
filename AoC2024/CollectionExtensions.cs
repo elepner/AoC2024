@@ -23,10 +23,20 @@ public static class CollectionExtension
 
     public static bool CheckBounds<T>(this T[][] field, (int, int) coords)
     {
-        var (row, col) = coords;
-        var (rows, cols) = field.GetDims();
+        return CheckBounds(coords, field.GetDims());
+    }
 
+    private static bool CheckBounds((int, int) coords, (int, int) dims)
+    {
+        var (row, col) = coords;
+        var (rows, cols) = dims;
         return row >= 0 && row < rows && col >= 0 && col < cols;
+    }
+
+    public static IEnumerable<(int, int)> WithinBoundsOf<T>(this IEnumerable<(int, int)> coords, T[][] field)
+    {
+        var dims = field.GetDims();
+        return coords.Where(xy => CheckBounds(xy, dims));
     }
 
     public static T GetVal<T>(this T[][] field, (int, int) coords)

@@ -140,7 +140,8 @@ static class SolutionDy10
             .AllDirections()
             .Select(x => x.GetVector())
             .Select(v => v.Add(point))
-            .Where(x => field.CheckBounds(x) && field.GetVal(x).Height == value.Height + 1);
+            .WithinBoundsOf(field)
+            .Where(x => field.GetVal(x).Height == value.Height + 1);
     }
 }
 
