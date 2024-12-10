@@ -28,7 +28,23 @@ public class Day10
     {
         var field = ParseInput(File.ReadAllText("TestAssets/day10.txt"));
         var result = SolutionDy10.Solve(field);
+        Assert.Equal(582, result);
+    }
 
+    [Fact]
+    public void ShouldSolveSamplePt2()
+    {
+        var input = ParseInput(Sample);
+        var result = SolutionDy10.SolvePt2(input);
+        Assert.Equal(81, result);
+    }
+
+    [Fact]
+    public void ShouldSolvePt2()
+    {
+        var field = ParseInput(File.ReadAllText("TestAssets/day10.txt"));
+        var result = SolutionDy10.SolvePt2(field);
+        Assert.Equal(1302, result);
     }
 
     private static MapHeight[][] ParseInput(string input)
@@ -55,6 +71,17 @@ static class SolutionDy10
         return count;
     }
 
+    public static int SolvePt2(MapHeight[][] field)
+    {
+        int count = 0;
+        var zeros = field.EnumerateCoords().Select(xy => xy.GetFieldValue(field)).Where(x => x.Value.Height == 0);
+
+        foreach (var zero in zeros)
+        {
+            Dfs(field, zero.Coordinates, ref count);
+        }
+        return count;
+    }
 
     public static int Bfs(MapHeight[][] field, (int, int) start)
     {
@@ -95,27 +122,27 @@ static class SolutionDy10
         return visited.Count(x => x.GetFieldValue(field).Value.Height == 9);
 
     }
-    // private static void Dfs(MapHeight[][] field, (int, int) current, )
-    // {
-    //     var value = field.GetVal(current);
+    private static void Dfs(MapHeight[][] field, (int, int) current, ref int finishCount)
+    {
+        var value = field.GetVal(current);
 
-    //     if (value.Height == 9)
-    //     {
-    //         finishCount++;
-    //         return;
-    //     }
+        if (value.Height == 9)
+        {
+            finishCount++;
+            return;
+        }
 
-    //     var canGoTo = CollectionExtension
-    //         .AllDirections()
-    //         .Select(x => x.GetVector())
-    //         .Select(v => v.Add(current))
-    //         .Where(x => field.CheckBounds(x) && field.GetVal(x).Height == value.Height + 1);
+        var canGoTo = CollectionExtension
+            .AllDirections()
+            .Select(x => x.GetVector())
+            .Select(v => v.Add(current))
+            .Where(x => field.CheckBounds(x) && field.GetVal(x).Height == value.Height + 1);
 
-    //     foreach (var next in canGoTo)
-    //     {
-    //         Dfs(field, next, ref finishCount);
-    //     }
-    // }
+        foreach (var next in canGoTo)
+        {
+            Dfs(field, next, ref finishCount);
+        }
+    }
 }
 
 record struct MapHeight(int Height)
