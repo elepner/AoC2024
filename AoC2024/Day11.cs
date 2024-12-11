@@ -1,0 +1,166 @@
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using OneOf.Types;
+using Xunit;
+using Xunit.Abstractions;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace AoC2024;
+
+public class Day11(ITestOutputHelper toh)
+{
+    private static readonly string Input = "6 11 33023 4134 564 0 8922422 688775";
+    private static readonly string Sample = "125 17";
+
+    [InlineData(1, "253000 1 7")]
+    [InlineData(2, "253 0 2024 14168")]
+    [InlineData(3, "512072 1 20 24 28676032")]
+    [InlineData(4, "512 72 2024 2 0 2 4 2867 6032")]
+    [InlineData(5, "1036288 7 2 20 24 4048 1 4048 8096 28 67 60 32")]
+    [InlineData(6, "2097446912 14168 4048 2 0 2 4 40 48 2024 40 48 80 96 2 8 6 7 6 0 3 2")]
+    [Theory]
+    public void ShouldSolveSample(int blink, string expected)
+    {
+
+        var list = ParseInput(Sample);
+        long count = 0;
+        var result = new List<long>();
+        foreach (var number in list)
+        {
+            long currentCount = 0;
+            Simulate(number, 0, blink, ref currentCount, result);
+            count += currentCount;
+        }
+
+        var actual = string.Join(" ", result);
+        
+        Assert.Equal(actual, expected);
+    }
+
+    [Fact]
+    public void ShouldSolvePt1()
+    {
+        long count = 0;
+        var list = ParseInput(Input);
+        foreach (var number in list)
+        {
+            long currentCount = 0;
+            Simulate(number, 0, 25, ref currentCount);
+            count += currentCount;
+        }
+
+        Assert.Equal(220999, count);
+    }
+
+    [Fact]
+    public void ShouldSolvePt1WithCache()
+    {
+        var result = Solve(Input, (num, cache) =>
+        {
+            return Simulate2(num, 0, 25, cache);
+        });
+        Assert.Equal(220999, result);
+    }
+
+    [Fact]
+    public void SouldSolvePt2()
+    {
+        var result = Solve(Input, (num, cache) =>
+        {
+            return Simulate2(num, 0, 75, cache);
+        });
+
+        Assert.Equal(261936432123724, result);
+    }
+
+    private long Solve(string inputString, Func<long, Dictionary<(long, long), long>, long> simulate)
+    {
+        var cache = new Dictionary<(long, long), long>();
+        long result = 0;
+        foreach (var num in ParseInput(inputString))
+        {
+            result += simulate(num, cache);
+        }
+
+
+        return result;
+    }
+
+    private void Simulate(long current, int depth, int maxDepth, ref long count, List<long>? results = null)
+    {
+        
+
+        if (depth == maxDepth)
+        {
+            Interlocked.Increment(ref count);
+            results?.Add(current);
+            
+            return;
+        }
+
+        foreach (var l in Next(current))
+        {
+            Simulate(l, depth + 1, maxDepth, ref count, results);
+        }
+    }
+
+    public long Simulate2(long current, int depth, int maxDepth, Dictionary<(long, long), long> cache)
+    {
+
+        if (cache.TryGetValue((current, depth), out var cached))
+        {
+            return cached;
+            // toh.WriteLine($"Cache hit {current} {depth}");
+        }
+
+        if (depth == maxDepth)
+        {
+            return 1;
+        }
+
+
+        long result = 0;
+        foreach (var l in Next(current))
+        {
+            result += Simulate2(l, depth + 1, maxDepth, cache);
+        }
+
+        cache.TryAdd((current, depth), result);
+        return result;
+    }
+
+    public IEnumerable<long> Next(long current)
+    {
+
+        Assert.True(current >= 0);
+        if (current == 0)
+        {
+            yield return 1;
+        }
+        else
+        {
+            var str = current.ToString();
+
+
+            if (str.Length % 2 == 0)
+            {
+                yield return long.Parse(str.Substring(0, str.Length / 2));
+                yield return long.Parse(str.Substring(str.Length / 2));
+            }
+            else
+            {
+                yield return current * 2024;
+            }
+        }
+
+        
+
+    }
+
+    public static List<int> ParseInput(string input)
+    {
+        return input.Trim().Split(" ").Select(x => int.Parse(x)).ToList();
+    }
+
+}
