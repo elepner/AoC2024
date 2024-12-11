@@ -98,8 +98,8 @@ static class SolutionDay6
         }
 
         var cellTypeInFrontOfGuard = state.Field.GetCell(cellInFrontOfGuard);
-        
-        
+
+
         if (cellTypeInFrontOfGuard == CellType.Obstacle)
         {
             return state with { Guard = state.Guard with { Direction = (Direction)(((int)state.Guard.Direction + 1) % 4) } };

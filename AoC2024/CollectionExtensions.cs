@@ -2,6 +2,7 @@ namespace AoC2024;
 
 public static class CollectionExtension
 {
+
     public static IEnumerable<(int, int)> EnumerateCoords<T>(this T[][] field)
     {
         var (rows, cols) = field.GetDims();
@@ -22,10 +23,20 @@ public static class CollectionExtension
 
     public static bool CheckBounds<T>(this T[][] field, (int, int) coords)
     {
-        var (row, col) = coords;
-        var (rows, cols) = field.GetDims();
+        return CheckBounds(coords, field.GetDims());
+    }
 
+    private static bool CheckBounds((int, int) coords, (int, int) dims)
+    {
+        var (row, col) = coords;
+        var (rows, cols) = dims;
         return row >= 0 && row < rows && col >= 0 && col < cols;
+    }
+
+    public static IEnumerable<(int, int)> WithinBoundsOf<T>(this IEnumerable<(int, int)> coords, T[][] field)
+    {
+        var dims = field.GetDims();
+        return coords.Where(xy => CheckBounds(xy, dims));
     }
 
     public static T GetVal<T>(this T[][] field, (int, int) coords)
@@ -40,6 +51,11 @@ public static class CollectionExtension
     }
 
     public static FieldValue<T> GetFieldValue<T>(this T[][] field, (int, int) coords)
+    {
+        return new FieldValue<T>(coords, field[coords.Item1][coords.Item2]);
+    }
+
+    public static FieldValue<T> GetFieldValue<T>(this (int, int) coords, T[][] field)
     {
         return new FieldValue<T>(coords, field[coords.Item1][coords.Item2]);
     }
@@ -59,6 +75,33 @@ public static class CollectionExtension
             }
         }
     }
+
+
+    public static (int, int) GetVector(this Direction direction)
+    {
+
+        return direction switch
+        {
+            Direction.N => (-1, 0),
+            Direction.S => (1, 0),
+            Direction.E => (0, 1),
+            Direction.W => (0, -1),
+            _ => throw new ArgumentException()
+        };
+    }
+
+    public static Direction[] AllDirections()
+    {
+        return Enumerable.Range(0, 4).Select(x => (Direction)x).ToArray();
+    }
+}
+
+public enum Direction
+{
+    N = 0,
+    E = 1,
+    S = 2,
+    W = 3
 
 }
 
