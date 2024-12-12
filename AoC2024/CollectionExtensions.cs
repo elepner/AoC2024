@@ -94,6 +94,11 @@ public static class CollectionExtension
     {
         return Enumerable.Range(0, 4).Select(x => (Direction)x).ToArray();
     }
+
+    public static IEnumerable<(Direction Direction, (int, int) Point)> Around(this (int, int) v)
+    {
+        return AllDirections().Select(x => (x, x.GetVector().Add(v)));
+    }
 }
 
 public enum Direction
