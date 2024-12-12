@@ -1,10 +1,5 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using OneOf.Types;
-using Xunit;
+﻿using Xunit;
 using Xunit.Abstractions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AoC2024;
 
@@ -63,12 +58,25 @@ public class Day11(ITestOutputHelper toh)
         Assert.Equal(220999, result);
     }
 
-    [Fact]
-    public void SouldSolvePt2()
+
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    [InlineData(7)]
+    [InlineData(8)]
+    [InlineData(9)]
+    [InlineData(10)]
+    [InlineData(11)]
+    [Theory]
+    
+    public void SouldSolvePt2(int addToCacheAtDepth)
     {
         var result = Solve(Input, (num, cache) =>
         {
-            return Simulate2(num, 0, 75, cache);
+            return Simulate2(num, 0, 75, cache, addToCacheAtDepth);
         });
 
         Assert.Equal(261936432123724, result);
@@ -82,7 +90,7 @@ public class Day11(ITestOutputHelper toh)
         {
             result += simulate(num, cache);
         }
-
+        toh.WriteLine($"Cache size {cache.Count}");
 
         return result;
     }
@@ -105,14 +113,17 @@ public class Day11(ITestOutputHelper toh)
         }
     }
 
-    public long Simulate2(long current, int depth, int maxDepth, Dictionary<(long, long), long> cache)
+    public long Simulate2(long current, int depth, int maxDepth, Dictionary<(long, long), long> cache, int addToCacheAtDepth = 0)
     {
-
-        if (cache.TryGetValue((current, depth), out var cached))
+        var remainingDepth = maxDepth - depth;
+        if (remainingDepth > addToCacheAtDepth)
         {
-            return cached;
-            // toh.WriteLine($"Cache hit {current} {depth}");
+            if (cache.TryGetValue((current, depth), out var cached))
+            {
+                return cached;
+            }
         }
+        
 
         if (depth == maxDepth)
         {
@@ -123,10 +134,15 @@ public class Day11(ITestOutputHelper toh)
         long result = 0;
         foreach (var l in Next(current))
         {
-            result += Simulate2(l, depth + 1, maxDepth, cache);
+            result += Simulate2(l, depth + 1, maxDepth, cache, addToCacheAtDepth);
         }
 
-        cache.TryAdd((current, depth), result);
+        
+        if (remainingDepth > addToCacheAtDepth)
+        {
+            cache.TryAdd((current, depth), result);
+        }
+        
         return result;
     }
 
