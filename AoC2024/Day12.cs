@@ -15,11 +15,11 @@ public class Day12(ITestOutputHelper toh)
                                        """;
 
     public static string LargeSample = """
-                                       RRRRIICCFF
-                                       RRRRIICCCF
+                                       RRRRiiCCFF
+                                       RRRRiiCCCF
                                        VVRRRCCFFF
                                        VVRCCCJFFF
-                                       VVVVCJJCFE
+                                       VVVVCJJĆFE
                                        VVIVCCJJEE
                                        VVIIICJJEE
                                        MIIIIIJJEE
@@ -49,8 +49,6 @@ public class Day12(ITestOutputHelper toh)
     [Theory]
     public void ShouldFindAllAreasAndPerimeters(char toCheck)
     {
-        var garden = ParseInput(SmallSample);
-        var allRegions = FindAllRegions(garden).ToArray();
 
         var expected = new Dictionary<char, (int area, int perimeter, int straightLines)>()
         {
@@ -60,6 +58,72 @@ public class Day12(ITestOutputHelper toh)
             {'D', (1, 4, 4)},
             {'E', (3, 8, 4)},
         };
+
+        FindAllAreasAndPerimeters(SmallSample, toCheck, expected);
+    }
+
+    [InlineData('R')]
+    [InlineData('i')]
+    [InlineData('C')]
+    [InlineData('F')]
+    [InlineData('V')]
+    [InlineData('J')]
+    [InlineData('Ć')]
+    [InlineData('E')]
+    [InlineData('I')]
+    [InlineData('M')]
+    [InlineData('S')]
+    [Theory]
+    public void ShouldFindAllAreasAndPerimetersOnLargeSample(char c)
+    {
+        var expected = new Dictionary<char, (int area, int perimeter, int straightLines)>()
+        {
+
+            {'R', (12, 18, 10 )},
+            {'i', (4 , 8,  4 )},
+            {'C', (14, 28, 22 )},
+            {'F', (10, 18, 12 )},
+            {'V', (13, 20, 10 )},
+            {'J', (11, 20, 12 )},
+            {'Ć', (1 , 4,  4 )},
+            {'E', (13, 18,  8 )},
+            {'I', (14, 22, 16 )},
+            {'M', (5 , 12,  6 )},
+            {'S', (3 , 8,  6 )},
+        };
+        foreach (var kv in expected)
+        {
+            if (kv.Key != c)
+            {
+                continue;
+            }
+            FindAllAreasAndPerimeters(LargeSample, kv.Key, expected);
+        }
+    }
+    [Fact]
+    public void SomeSample()
+    {
+        var expected = new Dictionary<char, (int area, int perimeter, int straightLines)>()
+        {
+            {'X', (8, 16, 8 )},
+            {'O', (1, 4, 4 )},
+        };
+
+        foreach (var kv in expected)
+        {
+            FindAllAreasAndPerimeters("""
+                                        XXX
+                                        XOX
+                                        XXX
+                                      """, kv.Key, expected);
+        }
+    }
+
+    private void FindAllAreasAndPerimeters(string input, char toCheck, Dictionary<char, (int area, int perimeter, int straightLines)> expected)
+    {
+        var garden = ParseInput(input);
+        var allRegions = FindAllRegions(garden).ToArray();
+
 
         foreach (var region in allRegions)
         {
@@ -75,13 +139,9 @@ public class Day12(ITestOutputHelper toh)
             Assert.Equal(perimeter, region.perimeter);
 
             var sl = CountStraightLines(region.perimeterPlots, region.visited);
-
-
             Assert.Equal(straightLines, sl);
         }
     }
-
-
 
     public int SolvePt1(string input)
     {
@@ -110,6 +170,8 @@ public class Day12(ITestOutputHelper toh)
     {
         var result = SolvePt2(File.ReadAllText("TestAssets/day12.txt"));
         Assert.True(result > 867147);
+        Assert.True(result < 918329);
+        Assert.True(877852 != result);
     }
 
     [InlineData("""
@@ -207,16 +269,30 @@ public class Day12(ITestOutputHelper toh)
             DecreaseDegree(el.Key);
             count++;
 
-            var line = el.Key
+            var directionOfLine = el.Key
             .Around()
-            .Where(tuple => perimeter.Contains(tuple.Point))
-            .SelectMany((tuple) =>
+            .Where(tuple => perimeterDegree.ContainsKey(tuple.Point))
+            .Select(x => new
             {
-                var (direction, v) = tuple;
+                Data = x
+            })
+            .FirstOrDefault();
+
+            if (directionOfLine == null)
+            {
+                toh.WriteLine($"Direction is null {el.Key}");
+                continue;
+            }
+
+            var line = new int[] { 1, -1 }.SelectMany(mul =>
+            {
+                var (direction, v) = directionOfLine.Data;
                 return Enumerable.Range(1, int.MaxValue)
-                .Select((i) => direction.GetVector().Scale(i).Add(el.Key))
-                .TakeWhile((v) => perimeterDegree.ContainsKey(v));
+            .Select((i) => direction.GetVector().Scale(i * mul).Add(el.Key))
+            .TakeWhile((v) => perimeterDegree.ContainsKey(v));
             }).ToList();
+
+            toh.WriteLine(string.Join(", ", line.Prepend(el.Key)));
 
             line.ForEach((p) =>
             {
