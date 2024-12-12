@@ -119,6 +119,102 @@ public class Day12(ITestOutputHelper toh)
         }
     }
 
+    [Fact]
+    public void MoreSamples()
+    {
+        var input = """
+        XXXXX
+        XOOOX
+        XXOXX
+        """;
+
+        var expected = new Dictionary<char, (int area, int perimeter, int straightLines)>()
+        {
+            {'X', (11, 24, 12 )},
+            {'O', (4, 10, 8 )},
+        };
+
+        foreach (var kv in expected)
+        {
+            FindAllAreasAndPerimeters(input, kv.Key, expected);
+        }
+    }
+
+    [Fact]
+    public void MoreSamples2()
+    {
+        var input = """
+        XXXXXXX
+        XOOOOOX
+        XOOXOOX
+        XOOXOOX
+        XXXXXXX
+        """;
+
+        var expected = new Dictionary<char, (int area, int perimeter, int straightLines)>()
+        {
+            {'X', (-1, -1, 12 )},
+            {'O', (-1, -1, 8 )},
+        };
+
+        foreach (var kv in expected)
+        {
+            FindAllAreasAndPerimeters(input, kv.Key, expected);
+        }
+    }
+
+
+    [Fact]
+    public void MoreSamples3()
+    {
+        var input = """
+        XXX
+        XOX
+        XOX
+        XOX
+        XOX
+        XOX
+        XOX
+        """;
+
+        var expected = new Dictionary<char, (int area, int perimeter, int straightLines)>()
+        {
+            {'X', (-1, -1, 8 )},
+            {'O', (-1, -1, 4 )},
+        };
+
+        foreach (var kv in expected)
+        {
+            FindAllAreasAndPerimeters(input, kv.Key, expected);
+        }
+    }
+
+
+    [Fact]
+    public void MoreSamples4()
+    {
+        var input = """
+        XXXXXX
+        XOOXXX
+        XOOXXX
+        XOOOOX
+        XOOXOX
+        XOOXXX
+        XXXXXX
+        """;
+
+        var expected = new Dictionary<char, (int area, int perimeter, int straightLines)>()
+        {
+            {'X', (-1, -1, 14 )},
+            {'O', (-1, -1, 10 )},
+        };
+
+        foreach (var kv in expected)
+        {
+            FindAllAreasAndPerimeters(input, kv.Key, expected);
+        }
+    }
+
     private void FindAllAreasAndPerimeters(string input, char toCheck, Dictionary<char, (int area, int perimeter, int straightLines)> expected)
     {
         var garden = ParseInput(input);
@@ -135,8 +231,11 @@ public class Day12(ITestOutputHelper toh)
             toh.WriteLine(string.Join(", ", region.visited));
             toh.WriteLine("---perimeter----");
             toh.WriteLine(string.Join(", ", region.perimeter));
-            Assert.Equal(area, region.visited.Count);
-            Assert.Equal(perimeter, region.perimeter);
+
+            if (area > 0)
+                Assert.Equal(area, region.visited.Count);
+            if (perimeter > 0)
+                Assert.Equal(perimeter, region.perimeter);
 
             var sl = CountStraightLines(region.perimeterPlots, region.visited);
             Assert.Equal(straightLines, sl);
@@ -251,6 +350,7 @@ public class Day12(ITestOutputHelper toh)
         void DecreaseDegree((int, int) key)
         {
             var value = perimeterDegree[key];
+
             value--;
             if (value == 0)
             {
