@@ -85,7 +85,6 @@ static class SolutionDy10
 
     public static int Bfs(MapHeight[][] field, (int, int) start)
     {
-        var value = field.GetVal(start);
         var front = new HashSet<(int, int)>()
         {
             start
@@ -99,7 +98,6 @@ static class SolutionDy10
             {
                 front.Remove(el);
                 visited.Add(el);
-                var currentCell = el.GetFieldValue(field);
 
                 var canGoTo = field.GetCanGoTo(el).Where(x => !front.Contains(x)
                                                             && !visited.Contains(x));
