@@ -79,7 +79,14 @@ public class Day12(ITestOutputHelper toh)
         });
     }
 
-    private IEnumerable<(GardenCell Value, HashSet<(int, int)> visited, int perimeter)> FindAllRegions(Garden garden)
+    public int SolvePt2(string input)
+    {
+        var regions = FindAllRegions(ParseInput(input));
+        return 42;
+    }
+
+
+    private IEnumerable<(GardenCell Value, HashSet<(int, int)> visited, int perimeter, HashSet<(int, int)> perimeterPlots)> FindAllRegions(Garden garden)
     {
         
 
@@ -94,17 +101,34 @@ public class Day12(ITestOutputHelper toh)
             }
 
 
-            var (visited, perimeter) = Bfs(garden, seed);
+            var (visited, perimeter, perimeterPlots) = Bfs(garden, seed);
 
             foreach (var item in visited)
             {
                 allVisited.Add(item);
             }
 
-            yield return (seed.GetFieldValue(garden).Value, visited, perimeter);
+            yield return (seed.GetFieldValue(garden).Value, visited, perimeter, perimeterPlots);
+        }
+    }
+
+    private int CountStraightLines(HashSet<(int, int)> perimeter)
+    {
+        var count = 0;
+
+        var start = perimeter.First();
+
+        var visited = new HashSet<(int, int)>();
+
+        
+
+        while (perimeter.Count != visited.Count)
+        {
+            var el = perimeter.FirstOrDefault(x => !visited.Contains(x), (-1, -1));
+
         }
 
-
+        return 0;
     }
 
     static Garden ParseInput(string input)
@@ -112,7 +136,7 @@ public class Day12(ITestOutputHelper toh)
         return input.Split(Environment.NewLine).Select(s => s.Select(c => new GardenCell(c)).ToArray()).ToArray();
     }
 
-    static (HashSet<(int, int)> visited, int perimeter) Bfs(Garden garden, (int, int) seed)
+    static (HashSet<(int, int)> visited, int perimeter, HashSet<(int, int)> PerimeterPlots) Bfs(Garden garden, (int, int) seed)
     {
         var front = new HashSet<(int, int)>()
         {
@@ -120,6 +144,9 @@ public class Day12(ITestOutputHelper toh)
         };
         var visited = new HashSet<(int, int)>();
         int p = 0;
+
+        HashSet<(int, int)> perimeter = new HashSet<(int, int)>();
+
         while (front.Count > 0)
         {
             var currentFront = front.ToArray();
@@ -131,28 +158,13 @@ public class Day12(ITestOutputHelper toh)
                 var neighbours = garden.GetNeighbours(el).Where(x => !visited.Contains(x.XY)).ToArray();
 
                 p += neighbours.Count(x => x.IsPerimeter);
-                //foreach (var xy in neighbours.Where(x => x.IsPerimeter))
-                //{
-                //    perimeter.Add(xy.XY);
-                //}
-
-                foreach (var xy in neighbours.Where(x => !x.IsPerimeter))
-                {
-                    front.Add(xy.XY);
-                }
-
-                //var canGoTo = garden.GetCanGoTo(el).Where(x => !front.Contains(x)
-                //                                              && !visited.Contains(x));
-
-                //foreach (var canGo in canGoTo)
-                //{
-                //    front.Add(canGo);
-                //}
+                perimeter.UnionWith(neighbours.Where(x => x.IsPerimeter).Select(x => x.XY));
+                front.UnionWith(neighbours.Where(x => !x.IsPerimeter).Select(x => x.XY));
 
             }
         }
 
-        return (visited, p);
+        return (visited, p, perimeter);
     }
 
 
