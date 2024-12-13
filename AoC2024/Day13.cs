@@ -49,12 +49,23 @@ public class Day13
     {
         var result = Solve(File.ReadAllText("TestAssets/day13.txt"));
         Assert.True(result > 27647);
+        Assert.True(result > 34941);
+        
+        Assert.Equal(35082, result);
     }
 
     private static int Solve(string input)
     {
-        return ParseInput(input).Select(x => x.Solve()).Where(x => x != null)
-            .Select((solution) => solution.Value.Item1 * 3 + solution.Value.Item2)
+        return ParseInput(input).Select(x => x.Solve())
+            .Select((solution) =>
+            {
+                if (solution == null)
+                {
+                    return 0;
+                }
+
+                return solution.Value.Item1 * 3 + solution.Value.Item2;
+            })
             .Aggregate(0, (acc, val) => acc + val);
     } 
 
@@ -63,22 +74,17 @@ public class Day13
     static Equation[] ParseInput(string input)
     {
         var lines = input.Trim().Split(Environment.NewLine).ToArray();
-        
+
         var equations = lines.Chunk(4).Select(chunk =>
         {
-            
-
             var numbers = Enumerable.Range(0, 3).SelectMany((i) =>
             {
                 var match = pattern.Matches(chunk[i]).ToArray().Select(x => x.Value).Select(int.Parse);
                 return match;
             }).ToArray();
-            //var eq = //Enumerable.Empty<string>().Concat(new int[]{0, 1}.Select())
 
             return new Equation(numbers[0], numbers[1], numbers[2], numbers[3], numbers[4], numbers[5]);
         }).ToArray();
-
-
 
         return equations;
     }
@@ -88,21 +94,45 @@ record Equation(int a, int b, int c, int d, int X, int Y)
 {
     public (int, int)? Solve()
     {
-        var M = (X - (double)c / d * Y) / (a - (double)b * c / d);
-        if (M < 0)
+        double f1 = (double)a / c;
+        double f2 = (double)b / d;
+        if (Math.Abs(f1 - f2) < 0.00001)
         {
-            return null;
+            throw new Exception("Dependent!");
         }
-        double fractionalPart = M - Math.Truncate(M);
-        if (Math.Abs(fractionalPart) > 0.000001)
+
+        var M = (X - (double)c * Y / d) / (a - (double)b * c / d);
+
+
+        if (!CheckDouble(M, out var mResult))
         {
             return null;
         }
 
         var N = (X - M * a) / c;
 
-        
+        if (!CheckDouble(N, out var nResult))
+        {
+            return null;
+        }
+        return (mResult, nResult);
+    }
+    private static bool CheckDouble(double val, out int result)
+    {
+        result = -1;
+        if (val < 0)
+        {
+            return false;
+        }
 
-        return ((int)M, (int)N);
+        double rounded = Math.Round(val);
+        double fractionalPart = val - rounded;
+        if (Math.Abs(fractionalPart) > 0.0001)
+        {
+            return false;
+        }
+
+        result = (int)rounded;
+        return true;
     }
 };
