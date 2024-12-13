@@ -141,6 +141,32 @@ public class Day12(ITestOutputHelper toh)
     }
 
     [Fact]
+    public void MoreSamples1()
+    {
+        var input = """
+                    XX
+                    """;
+
+        var expected = new Dictionary<char, (int area, int perimeter, int straightLines)>()
+        {
+            {'X', (-1, -1, 4 )},
+            
+        };
+
+        HashSet<(Direction, (int, int))> foo = new();
+        foo.Add((Direction.N, (1, 1)));
+        foo.Add((Direction.N, (1, 1)));
+        Assert.Single(foo);
+        foreach (var kv in expected)
+        {
+            FindAllAreasAndPerimeters(input, kv.Key, expected);
+        }
+
+        
+    }
+
+
+    [Fact]
     public void MoreSamples2()
     {
         var input = """
@@ -237,7 +263,7 @@ public class Day12(ITestOutputHelper toh)
             if (perimeter > 0)
                 Assert.Equal(perimeter, region.perimeter);
 
-            var sl = CountStraightLines(region.perimeterPlots, region.visited);
+            var sl = CountStraightLines2(region.perimeterPlots, region.visited);
             Assert.Equal(straightLines, sl);
         }
     }
@@ -308,7 +334,7 @@ public class Day12(ITestOutputHelper toh)
         var result = 0;
         foreach (var region in regions)
         {
-            var straightLines = CountStraightLines(region.perimeterPlots, region.visited);
+            var straightLines = CountStraightLines2(region.perimeterPlots, region.visited);
             result += straightLines * region.visited.Count;
         }
 
@@ -398,6 +424,58 @@ public class Day12(ITestOutputHelper toh)
             {
                 DecreaseDegree(p);
             });
+        }
+
+        return count;
+    }
+
+    public int CountStraightLines2(HashSet<(int, int)> perimeter, HashSet<(int, int)> area)
+    {
+        var sides = perimeter.SelectMany(
+            perimeterPoint => perimeterPoint.Around().Where(x => area.Contains(x.Point)).Select(x => (x.Direction, p: perimeterPoint))).ToHashSet();
+
+        int count = 0;
+        while (sides.Count > 0)
+        {
+            var (directionToTheBody, border) = sides.First();
+            sides.Remove((directionToTheBody, border));
+            count++;
+            List<(int, int)> side = new List<(int, int)>();
+            side.Add(border);
+            foreach (var dir in new bool[] { true, false }.Select(rotate => (directionToTheBody.Rotate90(rotate), rotate)))
+            {
+
+                var (direction, rotate) = dir;
+                
+                for (int i = 1; ; i++)
+                {
+                    var nextBorder = (directionToTheBody, border.Add(direction.GetVector().Scale(i)));
+
+                    if (sides.Contains(nextBorder))
+                    {
+                        sides.Remove(nextBorder);
+                        if (rotate)
+                        {
+                            side.Add(nextBorder.Item2);
+                        }
+                        else
+                        {
+                            side.Insert(0, nextBorder.Item2);
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                    
+                }
+
+                
+            }
+
+            toh.WriteLine("Side:");
+            toh.WriteLine(string.Join(",", side));
+            toh.WriteLine("-------");
         }
 
         return count;
