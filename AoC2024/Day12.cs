@@ -441,7 +441,6 @@ public class Day12(ITestOutputHelper toh)
             sides.Remove((directionToTheBody, border));
             count++;
             List<(int, int)> side = new List<(int, int)>();
-            side.Add(border);
             foreach (var dir in new bool[] { true, false }.Select(rotate => (directionToTheBody.Rotate90(rotate), rotate)))
             {
 
@@ -469,13 +468,8 @@ public class Day12(ITestOutputHelper toh)
                     }
                     
                 }
-
-                
             }
 
-            toh.WriteLine("Side:");
-            toh.WriteLine(string.Join(",", side));
-            toh.WriteLine("-------");
         }
 
         return count;
