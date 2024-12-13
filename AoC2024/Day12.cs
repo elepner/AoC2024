@@ -150,7 +150,7 @@ public class Day12(ITestOutputHelper toh)
         var expected = new Dictionary<char, (int area, int perimeter, int straightLines)>()
         {
             {'X', (-1, -1, 4 )},
-            
+
         };
 
         HashSet<(Direction, (int, int))> foo = new();
@@ -162,7 +162,7 @@ public class Day12(ITestOutputHelper toh)
             FindAllAreasAndPerimeters(input, kv.Key, expected);
         }
 
-        
+
     }
 
 
@@ -263,7 +263,7 @@ public class Day12(ITestOutputHelper toh)
             if (perimeter > 0)
                 Assert.Equal(perimeter, region.perimeter);
 
-            var sl = CountStraightLines2(region.perimeterPlots, region.visited);
+            var sl = CountStraightLines(region.perimeterPlots, region.visited);
             Assert.Equal(straightLines, sl);
         }
     }
@@ -334,7 +334,7 @@ public class Day12(ITestOutputHelper toh)
         var result = 0;
         foreach (var region in regions)
         {
-            var straightLines = CountStraightLines2(region.perimeterPlots, region.visited);
+            var straightLines = CountStraightLines(region.perimeterPlots, region.visited);
             result += straightLines * region.visited.Count;
         }
 
@@ -368,68 +368,7 @@ public class Day12(ITestOutputHelper toh)
         }
     }
 
-    private int CountStraightLines(HashSet<(int, int)> perimeter, HashSet<(int, int)> area)
-    {
-        var count = 0;
-        var perimeterDegree = perimeter.ToDictionary(x => x, y => y.Around().Where((x) => area.Contains(x.Item2)).Count());
-
-        void DecreaseDegree((int, int) key)
-        {
-            var value = perimeterDegree[key];
-
-            value--;
-            if (value == 0)
-            {
-                perimeterDegree.Remove(key);
-            }
-            else
-            {
-                perimeterDegree[key] = value;
-            }
-        }
-
-        while (perimeterDegree.Count > 0)
-        {
-            var el = perimeterDegree.First();
-            Assert.True(el.Value > 0);
-            DecreaseDegree(el.Key);
-            count++;
-
-            var directionOfLine = el.Key
-            .Around()
-            .Where(tuple => perimeterDegree.ContainsKey(tuple.Point))
-            .Select(x => new
-            {
-                Data = x
-            })
-            .FirstOrDefault();
-
-            if (directionOfLine == null)
-            {
-                toh.WriteLine($"Direction is null {el.Key}");
-                continue;
-            }
-
-            var line = new int[] { 1, -1 }.SelectMany(mul =>
-            {
-                var (direction, v) = directionOfLine.Data;
-                return Enumerable.Range(1, int.MaxValue)
-            .Select((i) => direction.GetVector().Scale(i * mul).Add(el.Key))
-            .TakeWhile((v) => perimeterDegree.ContainsKey(v));
-            }).ToList();
-
-            toh.WriteLine(string.Join(", ", line.Prepend(el.Key)));
-
-            line.ForEach((p) =>
-            {
-                DecreaseDegree(p);
-            });
-        }
-
-        return count;
-    }
-
-    public int CountStraightLines2(HashSet<(int, int)> perimeter, HashSet<(int, int)> area)
+    public static int CountStraightLines(HashSet<(int, int)> perimeter, HashSet<(int, int)> area)
     {
         var sides = perimeter.SelectMany(
             perimeterPoint => perimeterPoint.Around().Where(x => area.Contains(x.Point)).Select(x => (x.Direction, p: perimeterPoint))).ToHashSet();
@@ -445,7 +384,7 @@ public class Day12(ITestOutputHelper toh)
             {
 
                 var (direction, rotate) = dir;
-                
+
                 for (int i = 1; ; i++)
                 {
                     var nextBorder = (directionToTheBody, border.Add(direction.GetVector().Scale(i)));
@@ -466,7 +405,7 @@ public class Day12(ITestOutputHelper toh)
                     {
                         break;
                     }
-                    
+
                 }
             }
 
