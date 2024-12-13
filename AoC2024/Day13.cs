@@ -24,11 +24,11 @@ public class Day13
                                            """;
 
     [Fact]
-    public static void CheckSoluvitons()
+    public static void CheckSolutions()
     {
         var result = ParseInput(Sample).Select(x => x.Solve()).ToArray();
 
-        (int, int)?[] expected = [
+        (long, long)?[] expected = [
             (80, 40),
             null,
             (38, 86),
@@ -39,24 +39,64 @@ public class Day13
     }
 
     [Fact]
+    public static void CheckSolutionsPt2()
+    {
+        var result = ParseInput(Sample).Select(x => Tweak(x).Solve()).Select(x => x.HasValue).ToArray();
+
+        bool[] expected = [
+            false,
+            true,
+            false,
+            true
+        ];
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
     public static void ShouldSolveSample()
     {
         Assert.Equal(480, Solve(Sample));
     }
 
+    
+
     [Fact]
     public static void ShouldSolvePt1()
     {
         var result = Solve(File.ReadAllText("TestAssets/day13.txt"));
-        Assert.True(result > 27647);
-        Assert.True(result > 34941);
         
         Assert.Equal(35082, result);
     }
 
-    private static int Solve(string input)
+
+
+    [Fact]
+    public static void ShouldSolvePt2()
     {
-        return ParseInput(input).Select(x => x.Solve())
+        
+        var result = SolvePt2(File.ReadAllText("TestAssets/day13.txt"));
+        
+        Assert.True(result > 80212778885414);
+    }
+
+
+    private static Equation Tweak(Equation eq)
+    {
+        var increase = 10000000000000;
+        return eq with { X = eq.X + increase, Y = eq.Y + increase };
+    }
+
+    private static long SolvePt2(string input)
+    {
+        return Solve(input, Tweak);
+    }
+
+    private static long Solve(string input, Func<Equation, Equation>? preprocess = null)
+    {
+
+        preprocess ??= (x) => x;
+
+        return ParseInput(input).Select(eq => preprocess(eq)).Select(x => x.Solve())
             .Select((solution) =>
             {
                 if (solution == null)
@@ -66,7 +106,7 @@ public class Day13
 
                 return solution.Value.Item1 * 3 + solution.Value.Item2;
             })
-            .Aggregate(0, (acc, val) => acc + val);
+            .Aggregate(0l, (acc, val) => acc + val);
     } 
 
     static Regex pattern = new Regex(@"(?<number>\d+)");
@@ -90,17 +130,10 @@ public class Day13
     }
 }
 
-record Equation(int a, int b, int c, int d, int X, int Y)
+record Equation(long a, long b, long c, long d, long X, long Y)
 {
-    public (int, int)? Solve()
+    public (long, long)? Solve()
     {
-        double f1 = (double)a / c;
-        double f2 = (double)b / d;
-        if (Math.Abs(f1 - f2) < 0.00001)
-        {
-            throw new Exception("Dependent!");
-        }
-
         var M = (X - (double)c * Y / d) / (a - (double)b * c / d);
 
 
@@ -115,9 +148,11 @@ record Equation(int a, int b, int c, int d, int X, int Y)
         {
             return null;
         }
+
+
         return (mResult, nResult);
     }
-    private static bool CheckDouble(double val, out int result)
+    private static bool CheckDouble(double val, out long result)
     {
         result = -1;
         if (val < 0)
@@ -127,12 +162,12 @@ record Equation(int a, int b, int c, int d, int X, int Y)
 
         double rounded = Math.Round(val);
         double fractionalPart = val - rounded;
-        if (Math.Abs(fractionalPart) > 0.0001)
+        if (Math.Abs(fractionalPart) > 0.001)
         {
             return false;
         }
 
-        result = (int)rounded;
+        result = (long)rounded;
         return true;
     }
 };
