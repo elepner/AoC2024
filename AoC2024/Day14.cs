@@ -1,8 +1,9 @@
 using Xunit;
+using Xunit.Abstractions;
 
 namespace AoC2024;
 
-public class Day14
+public class Day14(ITestOutputHelper toh)
 {
     private static string Sample = """
                                     p=0,4 v=3,-3
@@ -35,10 +36,93 @@ public class Day14
     }
 
     [Fact]
+    public void CheckXmasTree()
+    {
+        var robots = ParseInput(Sample);
+
+        var dims = (7, 11);
+        for (int i = 1; i < 15000; i++)
+        {
+
+            var res = robots.Select(r => Simulate(r, dims, i)).ToArray();
+
+            var result = res.ToHashSet();
+            if (res.Length == result.Count)
+            {
+                var levels = Enumerable.Range(0, dims.Item2).Select(
+                level => string.Join("", Enumerable.Range(0, dims.Item1)
+                .Select(w => result.Contains((w, level)) ? "X" : "."))
+                );
+
+                foreach (var lvl in levels)
+                {
+                    toh.WriteLine(lvl);
+                }
+                toh.WriteLine($"~~~~~~~End {i}~~~~~~~");
+
+            }
+
+
+            if (!IsXmasTree(res, dims))
+            {
+                continue;
+            }
+
+            return;
+        }
+
+        throw new Exception("Not found :(");
+    }
+
+    [Fact]
     public static void ShouldSolvePt1()
     {
         var result = SolvePt1(File.ReadAllText("TestAssets/day14.txt"), (101, 103), 100);
         Assert.Equal(228421332, result);
+    }
+
+
+
+    public static bool IsXmasTree(IEnumerable<(int, int)> seq, (int, int) dims)
+    {
+        var els = seq.ToHashSet();
+        var middle = dims.Item1 / 2;
+        bool CheckLevel(int level)
+        {
+            if (!els.Contains((middle, level)))
+            {
+                return false;
+            }
+            bool shouldBeFilled = true;
+            for (int i = 1; i < middle; i++)
+            {
+                var l = els.Contains((middle - i, level));
+                var r = els.Contains((middle + i, level));
+
+                if (l != r)
+                {
+                    return false;
+                }
+
+                if (shouldBeFilled)
+                {
+                    if (!l)
+                    {
+                        shouldBeFilled = false;
+                    }
+                }
+                if (l != shouldBeFilled)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        return Enumerable.Range(0, dims.Item2).All(level =>
+        {
+            return CheckLevel(level);
+        });
     }
 
 
