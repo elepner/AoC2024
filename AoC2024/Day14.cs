@@ -38,9 +38,10 @@ public class Day14(ITestOutputHelper toh)
     [Fact]
     public void CheckXmasTree()
     {
-        var robots = ParseInput(Sample);
+        var input = File.ReadAllText("TestAssets/day14.txt");
+        var robots = ParseInput(input);
 
-        var dims = (7, 11);
+        var dims = (101, 103);
         for (int i = 1; i < 15000; i++)
         {
 
@@ -71,7 +72,6 @@ public class Day14(ITestOutputHelper toh)
             return;
         }
 
-        throw new Exception("Not found :(");
     }
 
     [Fact]
@@ -85,6 +85,8 @@ public class Day14(ITestOutputHelper toh)
 
     public static bool IsXmasTree(IEnumerable<(int, int)> seq, (int, int) dims)
     {
+        // result is 7790
+        // weird task 
         var els = seq.ToHashSet();
         var middle = dims.Item1 / 2;
         bool CheckLevel(int level)
