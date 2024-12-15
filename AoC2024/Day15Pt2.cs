@@ -9,7 +9,7 @@ using WarehouseCell = OneOf.OneOf<BigBox, WarehouseCellType>;
 public class Day15(ITestOutputHelper toh)
 {
 
-    public static string Sample = """
+    public const string Sample = """
                                     ########
                                     #..O.O.#
                                     ##@.O..#
@@ -22,18 +22,75 @@ public class Day15(ITestOutputHelper toh)
                                     <^^>>>vv<v>>v<<
                                   """;
 
+
+    public const string TrickyOne = """
+                                    ########
+                                    #..O.O.#
+                                    ##@OO..#
+                                    #...O..#
+                                    #.#.O..#
+                                    #...O..#
+                                    #......#
+                                    ########
+
+                                    >>
+                                  """;
+
+    public const string LargerExample = """
+        ##########
+        #..O..O.O#
+        #......O.#
+        #.OO..O.O#
+        #..O@..O.#
+        #O#..O...#
+        #O..O..O.#
+        #.OO.O.OO#
+        #....O...#
+        ##########
+
+        <vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
+        vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
+        ><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
+        <<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
+        ^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
+        ^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
+        >^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
+        <><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
+        ^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
+        v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
+    """;
+
+    private static readonly Dictionary<string, string> Samples = new Dictionary<string, string>() {
+        {"Large", LargerExample},
+        {"Simple", Sample},
+        {"Medium", TrickyOne}
+    };
+
     [Fact]
-    public void ShouldSolvePt1()
+    public void ShouldSolvePt2()
     {
         var input = File.ReadAllText("TestAssets/day15.txt");
-
+        var result = Solve(input);
+        WriteLine(result.ToString());
     }
 
-
     [Fact]
-    public void SimpleSample()
+    public void ShouldSolveLargeSample()
     {
-        var initial = ParseInput(Sample);
+        var result = Solve(LargerExample, (str) => WriteLine(str));
+
+        WriteLine("Final result");
+
+        Assert.Equal(9021, result);
+    }
+
+    [InlineData("Large")]
+    [InlineData("Simple")]
+    [InlineData("Medium")]
+    [Theory]
+    public void SimpleSample(string input)
+    {
+        var initial = ParseInput(Samples[input]);
 
         initial.Warehouse.Print(WriteLine);
         for (int i = 0; i < initial.Actions.Length; i++)
@@ -44,32 +101,23 @@ public class Day15(ITestOutputHelper toh)
             initial.Warehouse.Print(WriteLine);
             WriteLine("-----Step completed------");
         }
-        // Assert.Equal((6, 6), initial.Warehouse.GetDims());
 
-        // var warehouse = new Warehouse(initial.Warehouse, initial.RobotLocation);
-
-        // foreach (var action in initial.Actions)
-        // {
-        //     var result = warehouse.Move(action);
-        // }
-
-        // foreach (var line in warehouse.field)
-        // {
-        //     var str = string.Join("", line.Select(x => x switch
-        //     {
-        //         WarehouseCellType.Box => 'O',
-        //         WarehouseCellType.Wall => '#',
-        //         WarehouseCellType.Empty => ' '
-        //     }));
-        //     toh.WriteLine(str);
-        // }
-        // Assert.Equal(2028, warehouse.SumOfGps());
     }
 
-    public static int Solve(string input)
+    public static int Solve(string input, Action<string>? writeLine = null)
     {
-        throw new NotImplementedException();
+        var task = ParseInput(input);
+        for (int i = 0; i < task.Actions.Length; i++)
+        {
+            var action = task.Actions[i];
+            task.Warehouse.Move(action);
+        }
+        if (writeLine != null)
+        {
+            task.Warehouse.Print((str) => writeLine(str));
 
+        }
+        return task.Warehouse.SumOfGps();
     }
 
     public static (Warehouse Warehouse, Direction[] Actions) ParseInput(string input)
@@ -196,6 +244,7 @@ public class Warehouse
                 {
                     moveAction = () =>
                     {
+                        action();
                         field.SetVal(cell, WarehouseCellType.Empty);
                         field.SetVal(target.Add(v), toMove);
                     };
@@ -244,7 +293,18 @@ public class Warehouse
 
     public int SumOfGps()
     {
-        throw new NotImplementedException();
+
+        var foo = field
+        .EnumerateCoords()
+        .Select(x => x.GetFieldValue(field))
+        .Where(x => x.Value.IsT0);
+
+        return field
+        .EnumerateCoords()
+        .Select(x => x.GetFieldValue(field))
+        .Where(x => x.Value.IsT0).GroupBy(x => x.Value.AsT0.Id)
+        .Select(x => x.MinBy(y => y.Coordinates.Item2))
+        .Aggregate(0, (acc, current) => acc + (current.Coordinates.Item1) * 100 + (current.Coordinates.Item2));
     }
     public void Print(Action<string> writeline)
     {
@@ -260,7 +320,7 @@ public class Warehouse
                 return x.Match((box) =>
                 {
 
-                    return box.Id.ToString();
+                    return box.ToString();
                 }, rest =>
                 {
                     return rest switch
@@ -281,7 +341,17 @@ class BoxIdCounter
     public int Count { get; set; }
 }
 
-public record BigBox(int Id);
+public record BigBox(int Id)
+{
+    public override string ToString()
+    {
+        if (Id <= 9)
+        {
+            return Id.ToString();
+        }
+        return ((char)('a' + (Id - 10))).ToString();
+    }
+}
 
 public enum WarehouseCellType
 {
