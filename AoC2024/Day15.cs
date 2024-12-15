@@ -1,6 +1,7 @@
+using AoC2024;
 using Xunit;
 using Xunit.Abstractions;
-namespace AoC2024;
+namespace AoC2024Day15Pt1;
 
 public class Day15(ITestOutputHelper toh)
 {
@@ -23,6 +24,7 @@ public class Day15(ITestOutputHelper toh)
     {
         var input = File.ReadAllText("TestAssets/day15.txt");
         var result = Solve(input);
+        Assert.Equal(1485257, result);
     }
 
     [Fact]
