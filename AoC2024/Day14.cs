@@ -51,7 +51,7 @@ public class Day14(ITestOutputHelper toh)
         {
             var levels = Enumerable.Range(0, dims.Item2).Select(
             level => string.Join("", Enumerable.Range(0, dims.Item1)
-            .Select(w => result.Contains((w, level)) ? "X" : "."))
+            .Select(w => result.Contains((w, level)) ? "X" : " "))
             );
 
             foreach (var lvl in levels)
