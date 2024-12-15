@@ -236,7 +236,7 @@ public class Warehouse
     {
         var target = direction.GetVector().Add(robotLocation);
 
-        var action = MoveInternal(direction, target);
+        var action = MoveInternal(direction, target, new HashSet<int>());
         if (action != null)
         {
             action();
@@ -247,7 +247,7 @@ public class Warehouse
     }
 
 
-    private Action? MoveInternal(Direction direction, (int, int) cell)
+    private Action? MoveInternal(Direction direction, (int, int) cell, HashSet<int> pushedBoxes)
     {
         var v = direction.GetVector();
         var target = cell.Add(v);
@@ -260,6 +260,7 @@ public class Warehouse
 
         return toMove.Match(box =>
         {
+
             Action? moveAction = null;
             if (direction is Direction.W or Direction.E)
             {
@@ -272,7 +273,7 @@ public class Warehouse
                 {
                     throw new Exception("impossible");
                 }
-                var action = MoveInternal(direction, target.Add(v));
+                var action = MoveInternal(direction, target.Add(v), pushedBoxes);
                 if (action != null)
                 {
                     moveAction = () =>
@@ -296,23 +297,34 @@ public class Warehouse
 
                 var otherPart = new int[] { -1, 1 }.Select(i => cell.Add((0, i))).Single(x => field.GetVal(x).IsT0 && field.GetVal(x).AsT0 == box).GetFieldValue(field);
 
-                var action1 = MoveInternal(direction, target);
-                var action2 = MoveInternal(direction, otherPart.Coordinates.Add(v));
+                var action1 = MoveInternal(direction, target, pushedBoxes);
+                var action2 = MoveInternal(direction, otherPart.Coordinates.Add(v), pushedBoxes);
 
                 if (action1 == null || action2 == null)
                 {
                     return null;
                 }
-                moveAction = () =>
-                {
-                    action1();
-                    action2();
-                    field.SetVal(cell, WarehouseCellType.Empty);
-                    field.SetVal(target, toMove);
 
-                    field.SetVal(otherPart.Coordinates, WarehouseCellType.Empty);
-                    field.SetVal(otherPart.Coordinates.Add(v), toMove);
-                };
+                if (pushedBoxes.Contains(box.Id))
+                {
+                    moveAction = () => { };
+                }
+                else
+                {
+                    moveAction = () =>
+                                    {
+                                        action1();
+                                        action2();
+                                        field.SetVal(cell, WarehouseCellType.Empty);
+                                        field.SetVal(target, toMove);
+
+                                        field.SetVal(otherPart.Coordinates, WarehouseCellType.Empty);
+                                        field.SetVal(otherPart.Coordinates.Add(v), toMove);
+                                    };
+                    pushedBoxes.Add(box.Id);
+                }
+
+
             }
             return moveAction;
         }, simpleCell =>
