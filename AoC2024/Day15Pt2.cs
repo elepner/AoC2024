@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using AoC2024;
 using Xunit;
@@ -35,6 +36,7 @@ public class Day15(ITestOutputHelper toh)
 
                                     >>
                                   """;
+
 
     public const string LargerExample = """
         ##########
@@ -84,6 +86,26 @@ public class Day15(ITestOutputHelper toh)
         Assert.Equal(9021, result);
     }
 
+    [Fact]
+    public void TrickyCaseWithDiamond()
+    {
+
+        string sample = """
+                                    ########
+                                    #......#
+                                    #...O@.#
+                                    ##.OO..#
+                                    #...O..#
+                                    #.#....#
+                                    #......#
+                                    #......#
+                                    ########
+
+                                    <>vv<v<^
+                                  """;
+        Solve(sample, (str) => WriteLine(str));
+    }
+
     [InlineData("Large")]
     [InlineData("Simple")]
     [InlineData("Medium")]
@@ -110,7 +132,18 @@ public class Day15(ITestOutputHelper toh)
         for (int i = 0; i < task.Actions.Length; i++)
         {
             var action = task.Actions[i];
+            Debug.WriteLine($"Moving to {action}");
+            //if (i > 426)
+
+            task.Warehouse.Print((str) => System.Diagnostics.Debug.WriteLine(str));
+
             task.Warehouse.Move(action);
+            Debug.WriteLine($"Result after move is {action}");
+
+            task.Warehouse.Print((str) => System.Diagnostics.Debug.WriteLine(str));
+
+
+            task.Warehouse.CheckField();
         }
         if (writeLine != null)
         {
@@ -252,6 +285,15 @@ public class Warehouse
             }
             else
             {
+
+                var foo = new int[] { -1, 1 }.Select(i => cell.Add((0, i))).Where(x => field.GetVal(x).IsT0 && field.GetVal(x).AsT0 == box).ToArray();
+                if (foo.Length == 0)
+                {
+                    var bar = new int[] { -1, 1 }.Select(i => cell.Add((0, i))).Where(x => field.GetVal(x).IsT0).ToArray();
+
+                    Print((str) => Debug.WriteLine(str));
+                }
+
                 var otherPart = new int[] { -1, 1 }.Select(i => cell.Add((0, i))).Single(x => field.GetVal(x).IsT0 && field.GetVal(x).AsT0 == box).GetFieldValue(field);
 
                 var action1 = MoveInternal(direction, target);
@@ -294,11 +336,6 @@ public class Warehouse
     public int SumOfGps()
     {
 
-        var foo = field
-        .EnumerateCoords()
-        .Select(x => x.GetFieldValue(field))
-        .Where(x => x.Value.IsT0);
-
         return field
         .EnumerateCoords()
         .Select(x => x.GetFieldValue(field))
@@ -306,6 +343,33 @@ public class Warehouse
         .Select(x => x.MinBy(y => y.Coordinates.Item2))
         .Aggregate(0, (acc, current) => acc + (current.Coordinates.Item1) * 100 + (current.Coordinates.Item2));
     }
+
+    public void CheckField()
+    {
+        var (rows, cols) = field.GetDims();
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                var cell = field.GetVal((i, j));
+                if (cell.IsT0)
+                {
+                    var next = field.GetVal((i, j + 1));
+                    if (!next.IsT0)
+                    {
+                        throw new Exception($"Broken cell Id: {cell.AsT0.Id} {cell.AsT0}, {(i, j)}");
+                    }
+
+                    if (next.AsT0.Id != cell.AsT0.Id)
+                    {
+                        throw new Exception($"Broken cell, Id do not match Id: {cell.AsT0.Id} {cell.AsT0}, {(i, j)}");
+                    }
+                    j++;
+                }
+            }
+        }
+    }
+
     public void Print(Action<string> writeline)
     {
         for (int row = 0; row < field.Length; row++)
@@ -315,7 +379,7 @@ public class Warehouse
             {
                 if (this.robotLocation == (row, col))
                 {
-                    return "@";
+                    return "+";
                 }
                 return x.Match((box) =>
                 {
@@ -349,7 +413,26 @@ public record BigBox(int Id)
         {
             return Id.ToString();
         }
-        return ((char)('a' + (Id - 10))).ToString();
+        else if (Id is > 250 && Id < 300)
+        {
+            return ToChar(Id - 250).ToString();
+
+        }
+        return ToChar(Id % 52).ToString();
+    }
+
+    private static char ToChar(int val)
+    {
+        if (val <= 26)
+        {
+            // Map 1-26 to 'A'-'Z'
+            return (char)('A' + (val - 1));
+        }
+        else
+        {
+            // Map 27-52 to 'a'-'z'
+            return (char)('a' + (val - 27));
+        }
     }
 }
 
