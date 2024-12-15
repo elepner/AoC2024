@@ -29,13 +29,21 @@ public class Day15(ITestOutputHelper toh)
 
     }
 
+
     [Fact]
     public void SimpleSample()
     {
         var initial = ParseInput(Sample);
 
-        initial.Warehouse.Print((str) => toh.WriteLine(str));
-
+        initial.Warehouse.Print(WriteLine);
+        for (int i = 0; i < initial.Actions.Length; i++)
+        {
+            var action = initial.Actions[i];
+            WriteLine("Moving to: " + action.ToString());
+            initial.Warehouse.Move(action);
+            initial.Warehouse.Print(WriteLine);
+            WriteLine("-----Step completed------");
+        }
         // Assert.Equal((6, 6), initial.Warehouse.GetDims());
 
         // var warehouse = new Warehouse(initial.Warehouse, initial.RobotLocation);
@@ -66,11 +74,12 @@ public class Day15(ITestOutputHelper toh)
 
     public static (Warehouse Warehouse, Direction[] Actions) ParseInput(string input)
     {
+        int boxId = 0;
         var lines = input.Trim().Split(Environment.NewLine).Select(x => x.Trim()).ToArray();
         (int, int)? robot = null;
         var warehouse = lines.TakeWhile(x => !string.IsNullOrWhiteSpace(x)).Select((x, idx) =>
         {
-            var (line, roboCol) = ParseLine(x);
+            var (line, roboCol) = ParseLine(x, ref boxId);
             if (roboCol.HasValue)
             {
                 robot = (idx, roboCol.Value);
@@ -92,11 +101,16 @@ public class Day15(ITestOutputHelper toh)
 
         return (new Warehouse(warehouse, robot!.Value), actions);
     }
-
-    public static (WarehouseCell[], int?) ParseLine(string line)
+    private void WriteLine(string str)
+    {
+        System.Diagnostics.Debug.WriteLine(str);
+        toh.WriteLine(str);
+    }
+    private static (WarehouseCell[], int?) ParseLine(string line, ref int boxId)
     {
         int? robot = null;
-        return (line.SelectMany((c, idx) =>
+        var id = boxId;
+        var result = (line.SelectMany((c, idx) =>
         {
             IEnumerable<WarehouseCell> cell;
             if (c == '@')
@@ -107,7 +121,7 @@ public class Day15(ITestOutputHelper toh)
 
             IEnumerable<WarehouseCell> MakeBigBox()
             {
-                var box = new BigBox();
+                var box = new BigBox(id++);
                 return two.Select((_) => (WarehouseCell)box);
             }
             cell = c switch
@@ -121,7 +135,10 @@ public class Day15(ITestOutputHelper toh)
             };
             return cell;
         }).ToArray(), robot);
+        boxId = id;
+        return result;
     }
+
 }
 
 public class Warehouse
@@ -136,49 +153,135 @@ public class Warehouse
 
     public bool Move(Direction direction)
     {
-        throw new NotImplementedException();
+        var target = direction.GetVector().Add(robotLocation);
 
+        var action = MoveInternal(direction, target);
+        if (action != null)
+        {
+            action();
+            robotLocation = target;
+        }
+
+        return action != null;
+    }
+
+
+    private Action? MoveInternal(Direction direction, (int, int) cell)
+    {
+        var v = direction.GetVector();
+        var target = cell.Add(v);
+        if (!field.CheckBounds(target))
+        {
+            return null;
+        }
+        var toMove = cell.GetFieldValue(field).Value;
+        var targetCell = field.GetVal(target);
+
+        return toMove.Match(box =>
+        {
+            Action? moveAction = null;
+            if (direction is Direction.W or Direction.E)
+            {
+                if (!field.GetVal(target).IsT0)
+                {
+                    Print((str) => System.Diagnostics.Debug.WriteLine(str));
+
+                }
+                if (field.GetVal(target).AsT0 != box)
+                {
+                    throw new Exception("impossible");
+                }
+                var action = MoveInternal(direction, target.Add(v));
+                if (action != null)
+                {
+                    moveAction = () =>
+                    {
+                        field.SetVal(cell, WarehouseCellType.Empty);
+                        field.SetVal(target.Add(v), toMove);
+                    };
+                }
+            }
+            else
+            {
+                var otherPart = new int[] { -1, 1 }.Select(i => cell.Add((0, i))).Single(x => field.GetVal(x).IsT0 && field.GetVal(x).AsT0 == box).GetFieldValue(field);
+
+                var action1 = MoveInternal(direction, target);
+                var action2 = MoveInternal(direction, otherPart.Coordinates.Add(v));
+
+                if (action1 == null || action2 == null)
+                {
+                    return null;
+                }
+                moveAction = () =>
+                {
+                    action1();
+                    action2();
+                    field.SetVal(cell, WarehouseCellType.Empty);
+                    field.SetVal(target, toMove);
+
+                    field.SetVal(otherPart.Coordinates, WarehouseCellType.Empty);
+                    field.SetVal(otherPart.Coordinates.Add(v), toMove);
+                };
+            }
+            return moveAction;
+        }, simpleCell =>
+        {
+            if (simpleCell == WarehouseCellType.Wall)
+            {
+                return null;
+            }
+            else if (simpleCell == WarehouseCellType.Empty)
+            {
+                return () => { };
+            }
+            throw new Exception("ffff");
+        });
+
+
+
+        throw new ArgumentException("impossible");
     }
 
     public int SumOfGps()
     {
         throw new NotImplementedException();
     }
-
-    private bool MoveInternal(Direction direction, WarehouseCellType prev, (int, int) cell)
-    {
-
-        throw new ArgumentException("impossible");
-    }
-
     public void Print(Action<string> writeline)
     {
-        foreach (var line in field)
+        for (int row = 0; row < field.Length; row++)
         {
-
-            var str = string.Join("", line.Select((x, i) => x.Match((box) =>
+            WarehouseCell[] line = field[row];
+            var str = string.Join("", line.Select((x, col) =>
             {
-                var anotherBox = line[i - 1];
-                if (anotherBox.IsT0 && anotherBox.AsT0 == box)
+                if (this.robotLocation == (row, col))
                 {
-                    return "";
+                    return "@";
                 }
-                return "[]";
-            }, rest =>
-            {
-                return rest switch
+                return x.Match((box) =>
                 {
-                    WarehouseCellType.Empty => " ",
-                    WarehouseCellType.Wall => "#",
-                    _ => throw new NotImplementedException()
-                };
-            })));
+
+                    return box.Id.ToString();
+                }, rest =>
+                {
+                    return rest switch
+                    {
+                        WarehouseCellType.Empty => ".",
+                        WarehouseCellType.Wall => "#",
+                        _ => throw new NotImplementedException()
+                    };
+                }); ;
+            }));
             writeline(str);
         }
     }
 }
 
-public record BigBox();
+class BoxIdCounter
+{
+    public int Count { get; set; }
+}
+
+public record BigBox(int Id);
 
 public enum WarehouseCellType
 {
