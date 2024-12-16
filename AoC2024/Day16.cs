@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
@@ -30,42 +31,76 @@ public class Day16
                                   """;
 
     [Fact]
-    public void Foo()
+    public void ShouldSolveSample()
     {
-        var maze = ParseInput(Sample);
-        Solve(maze);
+        Assert.Equal(7036, Solve(Sample));
     }
 
-    void Solve(Maze maze)
+    [Fact]
+    public void ShouldSolvePt1()
+    {
+        var result = Solve(File.ReadAllText("TestAssets/day16.txt"));
+        Assert.Equal(99488, result);
+    }
+
+    public int Solve(string input)
+    {
+        var maze = ParseInput(input);
+        var visited = Solve(maze);
+        var result = visited.Where(x => x.Key.Location == maze.Finish).MinBy(x => x.Value).Value;
+        return result;
+    }
+
+    Dictionary<((int, int) Location, Direction Direction), int> Solve(Maze maze)
     {
 
-        var front = new SortedSet<(Vertex Vertext, int Cost)>(new FrontComparer());
-        front.Add(((maze.Start, Direction.E), 0));
-        var visited = new HashSet<Vertex>();
+        var front = new Dictionary<Vertex, int>();
+        front[(maze.Start, Direction.E)] = 0;
+        var visited = new Dictionary<Vertex, int>(); ;
         while (front.Count > 0)
         {
             //front.TryGetValue(front.Min, out var value);
-            var (vertex, cost) = front.Min;
-            front.Remove(front.Min);
-
-            foreach (var VARIABLE in GetNeighbours(maze, vertex))
+            // var (vertex, cost) = front.Min;
+            // front.Remove(front.Min);
+            var current = front.MinBy(x => x.Value);
+            var vertex = current.Key;
+            var cost = current.Value;
+            front.Remove(vertex);
+            visited.Add(vertex, cost);
+            foreach (var neighbor in GetNeighbours(maze, vertex))
             {
-                
+                var currentCost = cost + neighbor.Cost;
+
+                if (visited.ContainsKey(neighbor.Vertex))
+                {
+                    continue;
+                }
+
+                if (front.TryGetValue(neighbor.Vertex, out var existingCost))
+                {
+                    if (existingCost > currentCost)
+                        front[neighbor.Vertex] = currentCost;
+                }
+                else
+                {
+                    front[neighbor.Vertex] = currentCost;
+                }
             }
 
-            
+
 
         }
+
+        return visited;
     }
 
-    IEnumerable<(Vertex Vertext, int Cost)> GetNeighbours(Maze maze, Vertex vertex)
+    IEnumerable<(Vertex Vertex, int Cost)> GetNeighbours(Maze maze, Vertex vertex)
     {
         var currentDirection = vertex.Direction;
 
-        var directionsWithCost = Enumerable.Range(0, 3).Select(
+        var directionsWithCost = new int[] { 1, 3 }.Select(
                 (rotateCount) =>
-                    (Enumerable.Range(0, rotateCount).Aggregate(currentDirection, (acc, i) => acc.Rotate90(true)),
-                        (rotateCount + 1 % 2) * 1000)
+                    (Enumerable.Range(0, rotateCount).Aggregate(currentDirection, (acc, i) => acc.Rotate90(true)), 1000)
             ).Append((currentDirection, 0))
             .Select(tuple =>
             {

@@ -132,18 +132,7 @@ public class Day15(ITestOutputHelper toh)
         for (int i = 0; i < task.Actions.Length; i++)
         {
             var action = task.Actions[i];
-            Debug.WriteLine($"Moving to {action}");
-            //if (i > 426)
-
-            task.Warehouse.Print((str) => System.Diagnostics.Debug.WriteLine(str));
-
             task.Warehouse.Move(action);
-            Debug.WriteLine($"Result after move is {action}");
-
-            task.Warehouse.Print((str) => System.Diagnostics.Debug.WriteLine(str));
-
-
-            task.Warehouse.CheckField();
         }
         if (writeLine != null)
         {
