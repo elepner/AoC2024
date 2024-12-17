@@ -164,6 +164,7 @@ public class Day17(ITestOutputHelper toh)
         
         var result = Foo(reversed, 0, 0);
 
+        Assert.Equal(247839653009594, result);
     }
 
     private long? Foo(List<int> seq, int currentCount, long acc)
