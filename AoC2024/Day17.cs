@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using OneOf.Types;
@@ -142,6 +143,66 @@ public class Day17(ITestOutputHelper toh)
 
     }
 
+    [Fact]
+    public void Bar()
+    {
+        var input = ParseInput("""
+                   Register A: 30899381
+                   Register B: 0
+                   Register C: 0
+                   
+                   Program: 2,4,1,1,7,5,4,0,0,3,1,6,5,5,3,0
+                   """);
+
+        //var el = input.program.Reverse().First();
+
+        //var bar = Enumerable.Range(0, 8).Where(x => Foo(x, el)).ToArray();
+
+        List<int> results = new List<int>();
+
+        var reversed = input.program.Reverse().ToList();
+        
+        var result = Foo(reversed, 0, 0);
+
+    }
+
+    private long? Foo(List<int> seq, int currentCount, long acc)
+    {
+        if (currentCount == seq.Count)
+        {
+            return acc;
+        }
+
+        var possibleSolutions = Enumerable.Range(0, 8).Where(x => QuickEval(((acc << 3) | (byte)x), seq[currentCount]))
+            .ToArray();
+
+        foreach (var possibleSolution in possibleSolutions)
+        {
+            var next = (acc << 3) | (byte)possibleSolution;
+            if (possibleSolutions.Length > 1)
+            {
+
+            }
+            var result = Foo(seq, currentCount + 1, next);
+            if (result != null)
+            {
+                return result;
+            }
+        }
+
+        return null;
+    }
+
+    private bool QuickEval(long a, int expectedOutput)
+    {
+        var b = (a % 8);
+        b ^= 1;
+        var c = a >> (int)b;
+        b ^= c;
+        b ^= 6;
+        return (b % 8) == expectedOutput;
+    }
+
     private static bool Eval(DeviceProgram program, MachineState state, string expected)
     {
         try
@@ -234,7 +295,7 @@ public class Day17(ITestOutputHelper toh)
         
         int CalcAdv()
         {
-            return (int)((double)machineState.A / (1L << combo.Value));
+            return machineState.A >> combo.Value;
         }
 
         var newState = opId switch
