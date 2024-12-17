@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using OneOf.Types;
 using Xunit;
+using Xunit.Abstractions;
 
 
 namespace AoC2024;
 using DeviceProgram = int[];
-public class Day17
+public class Day17(ITestOutputHelper toh)
 {
     public const string Sample = """
                                  Register A: 729
@@ -86,13 +88,107 @@ public class Day17
         Assert.False(res == "4,7,3,7,6,7,4,7,0");
     }
 
+    [Fact]
+    public void ShouldSolveSamplePt2()
+    {
+        var result = SolvePt2(ParseInput("""
+                                         Register A: 2024
+                                         Register B: 0
+                                         Register C: 0
+                                         
+                                         Program: 0,3,5,4,3,0
+                                         """));
 
-    private static List<int> Evaluate(MachineState state, DeviceProgram program, out MachineState finalState)
+        Assert.Equal(117440, result);
+    }
+
+    [Fact]
+    public void ShouldSolvePt2()
+    {
+        var result = SolvePt2(ParseInput("""
+                                         Register A: 30899381
+                                         Register B: 0
+                                         Register C: 0
+                                         
+                                         Program: 2,4,1,1,7,5,4,0,0,3,1,6,5,5,3,0
+                                         """));
+
+        toh.WriteLine(result.ToString());
+    }
+
+    private int SolvePt2((DeviceProgram program, MachineState state) input)
+    {
+        int res = 0;
+        var expected = string.Join(",", input.program);
+
+
+        for (int i = 0;; i++)
+        {
+
+
+
+            if (i % 1000 == 0)
+            {
+                System.Diagnostics.Debug.WriteLine($"Processed {i}");
+            }
+
+            if (Eval(input.program, input.state with { A = i }, expected))
+            {
+                return i;
+            }
+
+
+        }
+
+    }
+
+    private static bool Eval(DeviceProgram program, MachineState state, string expected)
+    {
+        try
+        {
+            var result = Evaluate(state, program, out var finalSate, (added) =>
+            {
+
+                if (added.Count > program.Length)
+                {
+                    throw new TerminateEvaluationException(false);
+                }
+
+                if (added.Count == program.Length && added.SequenceEqual(program))
+                {
+                    throw new TerminateEvaluationException(true);
+                }
+
+                var current = string.Join(",", added);
+                if (!expected.StartsWith(current))
+                {
+                    throw new TerminateEvaluationException(false);
+                }
+            });
+
+        }
+        catch (TerminateEvaluationException ex)
+        {
+            if (ex.Success)
+            {
+                return true;
+            }
+
+        }
+
+        return false;
+    }
+
+    private static List<int> Evaluate(MachineState state, DeviceProgram program, out MachineState finalState, Action<List<int>>? valueAdded = null)
     {
         List<int> output = new List<int>();
         while (program.Length > state.Pointer)
         {
-            state = PerformOp(program[state.Pointer], program[state.Pointer + 1], state, (val) => output.Add(val));
+            state = PerformOp(program[state.Pointer], program[state.Pointer + 1], state, (val) =>
+            {
+                output.Add(val);
+                valueAdded?.Invoke(output);
+            });
         }
 
         finalState = state;
@@ -184,5 +280,10 @@ public class Day17
     }
 
 }
+
+class TerminateEvaluationException(bool success) : Exception
+{
+    public bool Success { get; } = success;
+};
 
 record struct MachineState(int A, int B, int C, int Pointer);
