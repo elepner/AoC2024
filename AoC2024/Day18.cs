@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.Linq;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace AoC2024;
@@ -9,33 +10,50 @@ public class Day18(ITestOutputHelper toh)
     public void ShouldSolveSamplePt1()
     {
         var result = Solve(Sample.Input, 12, (7, 7));
-        Assert.Equal(22, result);
+        Assert.Equal(22, result.Cost);
     }
 
     [Fact]
     public void ShouldSolvePt2()
     {
-        var result = Solve(File.ReadAllText("TestAssets/day17.txt"), 1024, (71, 71));
-        Assert.Equal(324, result);
+        var result = Solve(File.ReadAllText("TestAssets/day18.txt"), 1024, (71, 71));
+        Assert.Equal(324, result.Cost);
     }
 
-    private static HashSet<(int, int)> ParseInput(string input, int count)
+    [Fact]
+    public void SolveSamplePt2()
+    {
+        var result = Enumerable.Range(12, 100_000)
+            .Select((el) =>
+            {
+                return new
+                {
+                    Index = el,
+                    Result = Solve(File.ReadAllText("TestAssets/day18.txt"), el, (71, 71))
+                };
+            })
+            .First(x => !x.Result.Cost.HasValue);
+        var el = result.Result.Corrupted.Last();
+        Assert.Equal((23, 46), el);
+    }
+
+    private static (int,int)[] ParseInput(string input, int count)
     {
         var points = input.Trim().Split(Environment.NewLine).Take(count).Select(x =>
         {
             var pairs = x.Trim().Split(",").Select(int.Parse).ToArray();
             return (pairs[1], pairs[0]);
-        });
-        return [..points];
+        }).ToArray();
+        return points;
     }
 
-    public int Solve(string input, int corruptedCount, (int, int) dims)
+    public (int? Cost, (int,int)[] Corrupted) Solve(string input, int corruptedCount, (int, int) dims)
     {
         var corrupted = ParseInput(input, corruptedCount);
-        return FindCost(corrupted, dims);
+        return (FindCost([..corrupted], dims), corrupted);
     }
 
-    private static int FindCost(HashSet<(int, int)> points, (int, int) dims)
+    private static int? FindCost(HashSet<(int, int)> points, (int, int) dims)
     {
         var start = (0, 0);
         var end = dims.Sub((1, 1));
@@ -43,7 +61,7 @@ public class Day18(ITestOutputHelper toh)
         var front = new Dictionary<(int, int), int> { { start, 0 } };
         var visited = new Dictionary<(int, int), int>();
 
-        while (!visited.ContainsKey(end))
+        while (!visited.ContainsKey(end) && front.Count > 0)
         {
             var current = front.MinBy(x => x.Value);
 
@@ -76,7 +94,12 @@ public class Day18(ITestOutputHelper toh)
 
         }
 
-        return visited[end];
+        if (visited.TryGetValue(end, out var result))
+        {
+            return result;
+        }
+
+        return null;
     }
 
     private static IEnumerable<(int, int)> GetNeighbours(HashSet<(int, int)> corruptedMemory, (int, int) point, (int, int) dims)
