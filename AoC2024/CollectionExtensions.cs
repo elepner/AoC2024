@@ -26,6 +26,10 @@ public static class CollectionExtension
         return CheckBounds(coords, field.GetDims());
     }
 
+    public static bool WithinBounds(this (int, int) point, (int, int) bounds)
+    {
+        return CheckBounds(point, bounds);
+    }
     private static bool CheckBounds((int, int) coords, (int, int) dims)
     {
         var (row, col) = coords;
