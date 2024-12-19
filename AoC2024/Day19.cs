@@ -59,7 +59,7 @@ public class Day19
     [Fact]
     public void ShouldCorrectlySolvePt2()
     {
-        Assert.Equal(16, SolvePt2(Utils.ReadTaskInput(19)));
+        Assert.Equal(650354687260341, SolvePt2(Utils.ReadTaskInput(19)));
     }
     private int SolvePt1(string input)
     {
