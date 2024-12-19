@@ -67,11 +67,11 @@ public class Day19
         return toConstruct.Count(x => CanMakePattern(inputs, x));
     }
 
-    private int SolvePt2(string input)
+    private long SolvePt2(string input)
     {
         var (inputs, toConstruct) = ParseInput(input);
-        
-        return toConstruct.Select(x => CountPatterns(inputs, x)).Aggregate(0, (acc, curr) => acc +curr);
+        var cache = new Dictionary<string, long>();
+        return toConstruct.Select(x => CountPatterns(inputs, x, cache)).Aggregate(0l, (acc, curr) => acc +curr);
     }
     private bool CanMakePattern(string[] availableInputs, string targetPattern)
     {
@@ -93,27 +93,27 @@ public class Day19
         return false;
     }
 
-    private int CountPatterns(string[] availableInputs, string targetPattern)
-    {
-        int count = 0;
-        CountPatterns(availableInputs, targetPattern, ref count);
-        return count;
-    }
 
-    private void CountPatterns(string[] availableInputs, string targetPattern, ref int count)
+    private long CountPatterns(string[] availableInputs, string targetPattern, Dictionary<string, long> cache)
     {
+        if (cache.ContainsKey(targetPattern))
+        {
+            return cache[targetPattern];
+        }
+
         if (targetPattern.Length == 0)
         {
-            count++;
+            return 1;
         }
         var canUse = availableInputs.Where(x => targetPattern.StartsWith(x));
-
+        long count = 0;
         foreach (var towel in canUse)
         {
             var rest = targetPattern.Substring(towel.Length);
-            CountPatterns(availableInputs, rest, ref count);
+            count += CountPatterns(availableInputs, rest, cache);
         }
-
+        cache[targetPattern] = count;
+        return count;
     }
 
     private (string[], string[]) ParseInput(string input)
