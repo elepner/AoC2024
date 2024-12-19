@@ -49,10 +49,29 @@ public class Day19
         Assert.Equal(371,SolvePt1(Utils.ReadTaskInput(19)));
     }
 
+
+    [Fact]
+    public void ShouldCorrectlySolveSamplePt2()
+    {
+        Assert.Equal(16, SolvePt2(Sample));
+    }
+
+    [Fact]
+    public void ShouldCorrectlySolvePt2()
+    {
+        Assert.Equal(16, SolvePt2(Utils.ReadTaskInput(19)));
+    }
     private int SolvePt1(string input)
     {
         var (inputs, toConstruct) = ParseInput(input);
         return toConstruct.Count(x => CanMakePattern(inputs, x));
+    }
+
+    private int SolvePt2(string input)
+    {
+        var (inputs, toConstruct) = ParseInput(input);
+        
+        return toConstruct.Select(x => CountPatterns(inputs, x)).Aggregate(0, (acc, curr) => acc +curr);
     }
     private bool CanMakePattern(string[] availableInputs, string targetPattern)
     {
@@ -72,6 +91,29 @@ public class Day19
         }
 
         return false;
+    }
+
+    private int CountPatterns(string[] availableInputs, string targetPattern)
+    {
+        int count = 0;
+        CountPatterns(availableInputs, targetPattern, ref count);
+        return count;
+    }
+
+    private void CountPatterns(string[] availableInputs, string targetPattern, ref int count)
+    {
+        if (targetPattern.Length == 0)
+        {
+            count++;
+        }
+        var canUse = availableInputs.Where(x => targetPattern.StartsWith(x));
+
+        foreach (var towel in canUse)
+        {
+            var rest = targetPattern.Substring(towel.Length);
+            CountPatterns(availableInputs, rest, ref count);
+        }
+
     }
 
     private (string[], string[]) ParseInput(string input)
